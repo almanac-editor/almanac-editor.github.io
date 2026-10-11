@@ -21,6 +21,7 @@
 	import { className, humanise, termParts } from '#lib/house.ts';
 	import { links } from '#lib/links.ts';
 	import { session } from '#lib/session.svelte.ts';
+	import { tasksForOffering } from '#lib/domain/tasks.ts';
 
 	let {
 		path,
@@ -309,6 +310,30 @@
 											>{/each}
 									</select>
 								{/if}
+							{/if}
+
+							{#if unitAt(entry.unit)}
+								{@const found = unitAt(entry.unit)}
+								{@const tasks = found
+									? tasksForOffering(found.unit, offering.id, entry.term || null)
+									: []}
+								<div class="tasks">
+									<span class="label">Assessment tasks</span>
+									{#if tasks.length}
+										<ul>
+											{#each tasks as task, j (j)}
+												<li>
+													{task.title}{#if task.weight !== undefined}<i>{task.weight}%</i>{/if}
+												</li>
+											{/each}
+										</ul>
+									{:else}
+										<span class="none">None for this class.</span>
+									{/if}
+									<a href={links.unitTasks(join(offering.subject, entry.unit), path, entry.term)}
+										>Edit the unit’s tasks</a
+									>
+								</div>
 							{/if}
 						</fieldset>
 						<div class="controls">
@@ -599,6 +624,36 @@
 
 	.ref i.bad {
 		color: var(--warn);
+	}
+
+	.tasks {
+		display: flex;
+		flex-wrap: wrap;
+		align-items: baseline;
+		gap: 4px 14px;
+		margin-top: 14px;
+		padding-top: 10px;
+		border-top: 1px solid var(--rule);
+		font-size: 13px;
+	}
+
+	.tasks .label {
+		font-weight: 700;
+	}
+
+	.tasks ul {
+		display: contents;
+		list-style: none;
+	}
+
+	.tasks li i {
+		margin-left: 4px;
+		font-style: normal;
+		color: var(--muted);
+	}
+
+	.tasks .none {
+		color: var(--muted);
 	}
 
 	.picked {

@@ -11,6 +11,7 @@
 	import { join } from '#lib/domain/paths.ts';
 	import { className, houseMap, houseOf, humanise, titleCase } from '#lib/house.ts';
 	import { subjectOf } from '#lib/domain/layout.ts';
+	import { tasksForOffering } from '#lib/domain/tasks.ts';
 	import { links } from '#lib/links.ts';
 	import { session } from '#lib/session.svelte.ts';
 
@@ -39,7 +40,9 @@
 				unit,
 				offering,
 				lessons,
+				tasks: tasksForOffering(unit, offering?.id ?? null, offering ? t : null),
 				entries: offeringEntries(u, offerings),
+				names: new Map(offerings.map(([, x]) => [x.id, className(x)])),
 				houses: houseMap(offerings)
 			};
 		})();
@@ -93,7 +96,7 @@
 	{#await load}
 		<PageHead title={null} />
 		<div class="page"><div class="loading"><span></span><span></span><span></span></div></div>
-	{:then { unit, offering, lessons, entries, houses }}
+	{:then { unit, offering, lessons, tasks, entries, names, houses }}
 		{@const minutes = lessons.reduce((n, l) => n + (l.lesson?.duration_minutes ?? 0), 0)}
 		<PageHead
 			crumbs={[
@@ -199,6 +202,43 @@
 					</li>
 				{/each}
 			</ol>
+
+			<section class="tasks" aria-labelledby="tasks-head">
+				<div class="tasks-top">
+					<h2 id="tasks-head">Assessment tasks</h2>
+					<a class="btn" href={links.unitTasks(u, o, t)}>
+						<Icon name="pencil" size={16} /> Edit tasks
+					</a>
+				</div>
+				{#if tasks.length}
+					<ul>
+						{#each tasks as task, i (i)}
+							<li>
+								<span class="task-title">{task.title}</span>
+								<span class="sub">
+									{[
+										task.assessment_type,
+										task.weight !== undefined ? `${task.weight}%` : '',
+										task.class_minutes ? `${task.class_minutes} min of class time` : '',
+										!offering && task.offerings
+											? `Only ${task.offerings.map((id) => names.get(id) ?? id).join(', ')}`
+											: '',
+										!offering && task.term ? `${task.term} cohort` : ''
+									]
+										.filter(Boolean)
+										.join(' · ')}
+								</span>
+							</li>
+						{/each}
+					</ul>
+				{:else}
+					<p class="sub">
+						{offering
+							? `${className(offering)} sits none of this unit’s tasks.`
+							: 'No assessment tasks yet.'}
+					</p>
+				{/if}
+			</section>
 		</div>
 	{:catch error}
 		<PageHead title="Could not open this unit" />
@@ -379,6 +419,45 @@
 	.empty {
 		padding: 18px 4px;
 		color: var(--ink-2);
+	}
+
+	.tasks {
+		margin-top: 36px;
+	}
+
+	.tasks-top {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		gap: 12px;
+		padding-bottom: 8px;
+		border-bottom: 2px solid var(--ink);
+	}
+
+	.tasks h2 {
+		margin: 0;
+	}
+
+	.tasks ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
+	}
+
+	.tasks li {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		padding: 12px 4px;
+		border-bottom: 1px solid var(--rule);
+	}
+
+	.task-title {
+		font-weight: 750;
+	}
+
+	.tasks > .sub {
+		padding: 12px 4px;
 	}
 
 	@media (max-width: 720px) {

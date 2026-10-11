@@ -8,8 +8,9 @@
  * `": "` after keys, non-ASCII written literally, `[]` and `{}` for empties.
  *
  * The one known divergence is floats with no fractional part: Python writes
- * `1.0`, JavaScript writes `1`. No schema in the data repo has a number field,
- * so `dump` refuses a non-integer number rather than guessing.
+ * `1.0`, JavaScript writes `1`, and after parsing the two can't be told apart.
+ * The one number field (a task's `weight`) holds whole numbers, so `dump`
+ * refuses a non-integer number rather than guessing.
  */
 
 export type Json = null | boolean | number | string | Json[] | { [key: string]: Json };

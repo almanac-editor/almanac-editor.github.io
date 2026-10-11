@@ -25,6 +25,7 @@ import {
 	type OutcomeSet
 } from './unitEdit.ts';
 import { lessonsForOffering } from './offerings.ts';
+import { fromTaskDrafts, tasksForOffering, toTaskDrafts } from './tasks.ts';
 import type { Lesson, Offering, Unit } from './types.ts';
 import { Schemas } from './validate.ts';
 
@@ -253,6 +254,49 @@ print(json.dumps(out))
 			const unit: Unit = JSON.parse(read(`${unitDir}/unit.json`));
 			const offering: Offering = JSON.parse(read(path));
 			actual[key] = lessonsForOffering(unitDir, unit, offering, term === 'None' ? null : term);
+		}
+		expect(actual).toEqual(expected);
+	});
+
+	it('saves every unit’s untouched tasks as the same bytes', () => {
+		const units = files.filter((f) => f.endsWith('/unit.json'));
+		const changed = units.filter((f) => {
+			const unit: Unit = JSON.parse(read(f));
+			return dump(fromTaskDrafts(unit, toTaskDrafts(unit))) !== read(f);
+		});
+		expect(changed).toEqual([]);
+	});
+
+	it('picks a class’s tasks as scripts/offering_lessons.py does', () => {
+		const python = `
+import json, sys
+from pathlib import Path
+sys.path.insert(0, "scripts")
+from offering_lessons import tasks_for_offering
+out = {}
+for o in sorted(Path("offerings").glob("*.json")):
+    offering = json.loads(o.read_text(encoding="utf-8"))
+    for entry in offering["units"]:
+        unit_dir = Path(offering["subject"]) / entry["unit"]
+        unit = json.loads((unit_dir / "unit.json").read_text(encoding="utf-8"))
+        for oid in (None, offering["id"]):
+            for term in (None, entry.get("term")):
+                key = f"{unit_dir.as_posix()}|{oid}|{term}"
+                out[key] = [t["title"] for t in tasks_for_offering(unit, oid, term)]
+print(json.dumps(out))
+`;
+		const expected: Record<string, string[]> = JSON.parse(
+			execFileSync('python3', ['-c', python], { cwd: repo, encoding: 'utf-8' })
+		);
+		const actual: Record<string, string[]> = {};
+		for (const key of Object.keys(expected)) {
+			const [unitDir, id, term] = key.split('|');
+			const unit: Unit = JSON.parse(read(`${unitDir}/unit.json`));
+			actual[key] = tasksForOffering(
+				unit,
+				id === 'None' ? null : id,
+				term === 'None' ? null : term
+			).map((t) => t.title);
 		}
 		expect(actual).toEqual(expected);
 	});
