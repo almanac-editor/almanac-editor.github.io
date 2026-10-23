@@ -39,6 +39,14 @@ export interface Resource {
 	notes?: string;
 }
 
+/** Where a lesson's claims come from: a public link or a file in the repo, never both. */
+export interface Reference {
+	citation: string;
+	url?: string;
+	path?: string;
+	used_for: string;
+}
+
 export interface Lesson {
 	title: string;
 	description: string;
@@ -51,6 +59,7 @@ export interface Lesson {
 	assessment?: { formative?: string; evidence?: string[] };
 	differentiation?: Differentiation;
 	resources?: Resource[];
+	references?: Reference[];
 	materials?: unknown;
 	[key: string]: unknown;
 }

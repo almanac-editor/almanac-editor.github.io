@@ -8,6 +8,7 @@ import { decodeBase64, encodeBase64 } from './repo.ts';
 import type { Offering, Unit } from './types.ts';
 import { Schemas, toPath } from './validate.ts';
 import { describeProblems, fieldName } from './fieldNames.ts';
+import { citationParts, linkHost } from './lessonView.ts';
 
 const fixture = <T>(name: string): T =>
 	JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf-8'));
@@ -129,6 +130,15 @@ describe('Schemas', () => {
 		expect(paths).toContain('extra');
 	});
 
+	it('does not call a field unknown when something inside it is wrong', () => {
+		const problems = schemas.validate('lesson.schema.json', {
+			title: 'A',
+			duration_minutes: 5,
+			sections: [{ section: '', duration_minutes: 5 }]
+		});
+		expect(problems).toEqual([{ path: 'sections[0].section', message: 'is empty' }]);
+	});
+
 	it('resolves a reference into another schema', () => {
 		const problems = schemas.validate('offering.schema.json', {
 			id: 'x',
@@ -172,6 +182,7 @@ describe('fieldName', () => {
 		expect(lesson('assessment.evidence[1]')).toBe('Assessment, Evidence 2');
 		expect(lesson('differentiation.eald')).toBe('Differentiation, EAL/D');
 		expect(lesson('learning_intentions[2]')).toBe('Learning intention 3');
+		expect(lesson('references[0].url')).toBe('Reference 1, Link');
 		expect(lesson('')).toBe('The plan');
 		expect(lesson('extra')).toBe('extra');
 	});
@@ -193,5 +204,30 @@ describe('fieldName', () => {
 		expect(
 			describeProblems('offering.schema.json', [{ path: 'id', message: 'is missing' }])
 		).toEqual(['Id is missing.']);
+	});
+});
+
+describe('citationParts', () => {
+	it('marks the starred runs italic', () => {
+		expect(citationParts('Smith, J. (2024). *Socks*. Press.')).toEqual([
+			{ text: 'Smith, J. (2024). ', italic: false },
+			{ text: 'Socks', italic: true },
+			{ text: '. Press.', italic: false }
+		]);
+	});
+
+	it('leaves an unpaired asterisk as it is', () => {
+		expect(citationParts('5 * 4 socks')).toEqual([{ text: '5 * 4 socks', italic: false }]);
+	});
+});
+
+describe('linkHost', () => {
+	it('names the site of a web link', () => {
+		expect(linkHost('https://www.example.com/a/b?c=1')).toBe('www.example.com');
+	});
+
+	it('refuses anything that is not a web address', () => {
+		expect(linkHost('javascript:alert(1)')).toBeNull();
+		expect(linkHost('example.com/a')).toBeNull();
 	});
 });

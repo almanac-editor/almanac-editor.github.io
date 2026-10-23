@@ -65,6 +65,18 @@
       "canvas": "cheat_sheet"
     }
   ],
+  "references": [
+    {
+      "citation": "Hosiery Council. (2025). *Odd socks: A national count*.",
+      "url": "https://example.com/odd-socks",
+      "used_for": "Section 1: one sock in five has lost its pair."
+    },
+    {
+      "citation": "Sock counts invented for the sorting task.",
+      "path": "scripts/make_socks.py",
+      "used_for": "Section 2: the sock pile."
+    }
+  ],
   "materials": {
     "content": null,
     "workbook": {},

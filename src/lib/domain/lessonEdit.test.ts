@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { dump } from './format.ts';
 import {
 	EditError,
+	blankReference,
 	blankSection,
 	fromDraft,
 	linkTo,
@@ -117,6 +118,65 @@ describe('fromDraft', () => {
 	it('adds a differentiation key in schema order', () => {
 		const saved = save((d) => (d.differentiation.extension = 'Sort shoes too.'));
 		expect(Object.keys(saved.differentiation!)).toEqual(['support', 'extension', 'eald']);
+	});
+
+	it('edits a reference and keeps its key order', () => {
+		const saved = save((d) => (d.references[0].used_for = 'Section 1: the odd-sock rate.'));
+		expect(saved.references![0]).toEqual({
+			citation: 'Hosiery Council. (2025). *Odd socks: A national count*.',
+			url: 'https://example.com/odd-socks',
+			used_for: 'Section 1: the odd-sock rate.'
+		});
+	});
+
+	it('switches a reference from a link to a file, never holding both', () => {
+		const saved = save((d) => {
+			d.references[0].source = 'path';
+			d.references[0].where = 'data/odd_socks.csv';
+		});
+		expect(Object.keys(saved.references![0])).toEqual(['citation', 'path', 'used_for']);
+		expect(saved.references![0].path).toBe('data/odd_socks.csv');
+	});
+
+	it('adds, moves and removes references, dropping blank ones', () => {
+		const saved = save((d) => {
+			d.references.push({
+				...blankReference(),
+				citation: 'Sock drawer survey.',
+				where: 'https://example.com/drawers',
+				used_for: 'Section 3.'
+			});
+			d.references.push(blankReference());
+			move(d.references, 2, -2);
+			d.references.splice(2, 1);
+		});
+		expect(saved.references!.map((r) => r.citation)).toEqual([
+			'Sock drawer survey.',
+			'Hosiery Council. (2025). *Odd socks: A national count*.'
+		]);
+		expect(Object.keys(saved.references![0])).toEqual(['citation', 'url', 'used_for']);
+	});
+
+	it('refuses a reference with neither a link nor a file, numbered as the editor shows it', () => {
+		expect(() =>
+			save((d) => {
+				d.references.push(blankReference());
+				d.references.push({ ...blankReference(), citation: 'A', used_for: 'B' });
+			})
+		).toThrow('Reference 4 needs a link or a file.');
+	});
+
+	it('removes references when every one is removed', () => {
+		expect('references' in save((d) => (d.references = []))).toBe(false);
+	});
+
+	it('places references after resources in a plan that had none', () => {
+		const original = lesson();
+		delete original.references;
+		const draft = toDraft(original);
+		draft.references.push({ ...blankReference(), citation: 'A', where: 'B', used_for: 'C' });
+		const keys = Object.keys(fromDraft(original, draft));
+		expect(keys.slice(keys.indexOf('resources'))).toEqual(['resources', 'references', 'materials']);
 	});
 
 	it('never touches materials', () => {

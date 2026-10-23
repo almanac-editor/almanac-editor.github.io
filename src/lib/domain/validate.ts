@@ -94,12 +94,17 @@ function leafErrors(errors: SchemaError[]): Problem[] {
 		add(toPath(pointer), plain(e));
 	}
 	// `additionalProperties: false` also fails a known property whose value is
-	// invalid, so "not allowed" is only reported where nothing else explains it.
-	const explained = new Set(problems.map((p) => p.path));
+	// invalid, so "not allowed" is only reported where nothing at or inside the
+	// property explains it.
+	const explained = problems.map((p) => p.path);
+	const within = (path: string, inner: string) =>
+		inner === path || inner.startsWith(`${path}.`) || inner.startsWith(`${path}[`);
 	for (const e of errors) {
 		if (e.keyword !== 'false') continue;
 		const path = toPath(e.instanceLocation);
-		if (!explained.has(path)) add(path, 'is not a field this file can have');
+		if (!explained.some((inner) => within(path, inner))) {
+			add(path, 'is not a field this file can have');
+		}
 	}
 	// A `not` failure has no leaf beneath it; keep it rather than report nothing.
 	if (problems.length === 0) {

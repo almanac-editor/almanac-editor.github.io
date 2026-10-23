@@ -50,7 +50,8 @@ available, never required.
 - A lesson plan has a title, description, length, summary, a run sheet of
   timed sections (kind: talk / activity; tier: core / stretch), learning
   intentions, success criteria, syllabus dot points, assessment,
-  differentiation, feedback for next time, resources, and an optional paired
+  differentiation, feedback for next time, resources, references (where its
+  claims come from), and an optional paired
   Markdown content file.
 - Used on a teacher's laptop and on school machines, so sign-in on shared
   machines must stay per-tab by default.

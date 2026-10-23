@@ -40,7 +40,8 @@ function lesson(
 		curriculum_links: more.curriculum_links ?? [],
 		...(more.assessment ? { assessment: more.assessment } : {}),
 		...(more.differentiation ? { differentiation: more.differentiation } : {}),
-		...(more.resources ? { resources: more.resources } : {})
+		...(more.resources ? { resources: more.resources } : {}),
+		...(more.references ? { references: more.references } : {})
 	};
 }
 
@@ -172,6 +173,18 @@ const productLessons: Record<string, Lesson> = {
 					notes: 'Bottle opener, peeler, two pens, a stapler and a phone stand.'
 				},
 				{ name: 'Good design slides', canvas: 'good_design_slides' }
+			],
+			references: [
+				{
+					citation: 'Sample Design Council. (2024). *Ten rules for everyday objects*.',
+					url: 'https://example.com/ten-rules',
+					used_for: 'Section 4: the rules a group checks the class list against.'
+				},
+				{
+					citation: 'Rankings from earlier classes, summarised for the ranking task.',
+					path: 'data/sample_rankings.csv',
+					used_for: 'Section 3: the ranking a group compares its own with.'
+				}
 			]
 		}
 	),

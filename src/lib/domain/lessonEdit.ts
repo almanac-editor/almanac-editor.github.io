@@ -13,10 +13,13 @@
  * - What the editor never changes is copied through: `materials`, a curriculum
  *   link's framework, id, coverage and mode, a resource's url, canvas and file,
  *   and any key the editor does not know.
+ * - A reference is edited whole: its citation, its link or file, and what it
+ *   is used for. It has a link or a file, never both, and is refused with
+ *   neither.
  */
 
 import { normaliseText } from './format.ts';
-import type { CurriculumLink, Kind, Lesson, Resource, Section, Tier } from './types.ts';
+import type { CurriculumLink, Kind, Lesson, Reference, Resource, Section, Tier } from './types.ts';
 
 /** Original key order of a list item, carried through the draft so a moved item keeps it. */
 type Keyed = { __keys?: string[] };
@@ -30,6 +33,13 @@ export type SectionDraft = {
 } & Keyed;
 export type LinkDraft = CurriculumLink & { note: string } & Keyed;
 export type ResourceDraft = Resource & { notes: string } & Keyed;
+/** `where` is the link when `source` is `url`, and the file's path in the repo when it is `path`. */
+export type ReferenceDraft = {
+	citation: string;
+	source: 'url' | 'path';
+	where: string;
+	used_for: string;
+} & Keyed;
 
 export const DIFFERENTIATION_KEYS = [
 	'support',
@@ -52,6 +62,7 @@ export interface LessonDraft {
 	assessment: { formative: string; evidence: string[] };
 	differentiation: Record<DifferentiationKey, string>;
 	resources: ResourceDraft[];
+	references: ReferenceDraft[];
 }
 
 /** Schema order, for placing keys a file did not already have. */
@@ -67,11 +78,13 @@ export const LESSON_ORDER = [
 	'assessment',
 	'differentiation',
 	'resources',
+	'references',
 	'materials'
 ];
 const SECTION_ORDER = ['label', 'section', 'duration_minutes', 'kind', 'tier'];
 const LINK_ORDER = ['framework', 'id', 'coverage', 'mode', 'note'];
 const RESOURCE_ORDER = ['name', 'url', 'canvas', 'file', 'notes'];
+const REFERENCE_ORDER = ['citation', 'url', 'path', 'used_for'];
 const ASSESSMENT_ORDER = ['formative', 'evidence'];
 
 export class EditError extends Error {}
@@ -109,12 +122,23 @@ export function toDraft(lesson: Lesson): LessonDraft {
 			...r,
 			notes: r.notes ?? '',
 			__keys: Object.keys(r)
+		})),
+		references: (lesson.references ?? []).map((r) => ({
+			citation: r.citation ?? '',
+			source: r.url === undefined && r.path !== undefined ? 'path' : 'url',
+			where: r.url ?? r.path ?? '',
+			used_for: r.used_for ?? '',
+			__keys: Object.keys(r)
 		}))
 	};
 }
 
 export function blankSection(): SectionDraft {
 	return { label: '', section: '', duration_minutes: 5, tier: '', kind: '' };
+}
+
+export function blankReference(): ReferenceDraft {
+	return { citation: '', source: 'url', where: '', used_for: '' };
 }
 
 export function sectionTotal(draft: Pick<LessonDraft, 'sections'>): number {
@@ -184,6 +208,7 @@ export function fromDraft(original: Lesson, draft: LessonDraft, linking = false)
 	);
 
 	set('resources', resourcesFrom(original.resources ?? [], draft.resources), true);
+	set('references', referencesFrom(draft.references), true);
 
 	return ordered(out, Object.keys(original), LESSON_ORDER) as Lesson;
 }
@@ -244,6 +269,21 @@ function resourcesFrom(original: Resource[], drafts: ResourceDraft[]): Resource[
 		setField(item, original[i], 'notes', text(d.notes), true);
 		return ordered(item, d.__keys, RESOURCE_ORDER) as unknown as Resource;
 	});
+}
+
+/** References left wholly blank are dropped. Numbers in errors count every reference in the editor. */
+function referencesFrom(drafts: ReferenceDraft[]): Reference[] {
+	const out: Reference[] = [];
+	drafts.forEach((d, i) => {
+		const blank = (v: string) => text(v).trim() === '';
+		if ([d.citation, d.where, d.used_for].every(blank)) return;
+		if (blank(d.where)) throw new EditError(`Reference ${i + 1} needs a link or a file.`);
+		const item: Record<string, unknown> = { citation: text(d.citation) };
+		item[d.source] = text(d.where);
+		item.used_for = text(d.used_for);
+		out.push(ordered(item, d.__keys, REFERENCE_ORDER) as unknown as Reference);
+	});
+	return out;
 }
 
 function text(value: string | null | undefined): string {
