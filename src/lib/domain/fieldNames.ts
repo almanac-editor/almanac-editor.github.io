@@ -69,6 +69,21 @@ const SCHEMAS: Record<string, Field> = {
 				text: text('Text')
 			}),
 			applicable_outcomes: list('Outcomes', 'Outcome'),
+			assessments: list('Assessment tasks', 'Task', {
+				title: text('Title'),
+				assessment_type: text('Type'),
+				weight: text('Weight'),
+				description: text('Description'),
+				overview: text('Overview'),
+				offerings: list('Classes', 'Class'),
+				term: text('Term'),
+				class_minutes: text('Class time'),
+				curriculum_links: list('Syllabus', 'Syllabus link', {
+					coverage: text('Coverage'),
+					mode: text('Mode'),
+					note: text('Note')
+				})
+			}),
 			lessons: list('The unit’s lesson list', 'Lesson')
 		}
 	},

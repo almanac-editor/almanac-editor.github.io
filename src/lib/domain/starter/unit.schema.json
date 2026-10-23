@@ -51,6 +51,76 @@
 				}
 			}
 		},
+		"assessments": {
+			"description": "The unit's assessment tasks.",
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["title"],
+				"properties": {
+					"title": {
+						"type": "string"
+					},
+					"assessment_type": {
+						"type": "string"
+					},
+					"weight": {
+						"description": "Percent of the course mark.",
+						"type": "number",
+						"minimum": 0
+					},
+					"description": {
+						"type": "string"
+					},
+					"overview": {
+						"type": "string"
+					},
+					"offerings": {
+						"description": "Ids of the classes that sat it. Omit where every class taking the unit sits it.",
+						"type": "array",
+						"items": {
+							"type": "string",
+							"minLength": 1
+						},
+						"minItems": 1
+					},
+					"term": {
+						"description": "For a class that took the unit in two parts, the term of the cohort that sat it.",
+						"type": "string"
+					},
+					"class_minutes": {
+						"description": "Class time given to working on the task and its feedback.",
+						"type": "integer",
+						"minimum": 0
+					},
+					"curriculum_links": {
+						"description": "Dot points from syllabus_registry that the task itself evidences.",
+						"type": "array",
+						"items": {
+							"type": "object",
+							"required": ["framework", "id", "coverage", "mode"],
+							"properties": {
+								"framework": {
+									"type": "string"
+								},
+								"id": {
+									"type": "string"
+								},
+								"coverage": {
+									"enum": ["full", "partial"]
+								},
+								"mode": {
+									"enum": ["introduced", "developed", "consolidated", "revisited"]
+								},
+								"note": {
+									"type": "string"
+								}
+							}
+						}
+					}
+				}
+			}
+		},
 		"lessons": {
 			"description": "The unit's lesson plans, as paths relative to the unit, in teaching order.",
 			"type": "array",

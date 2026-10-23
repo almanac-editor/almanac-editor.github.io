@@ -77,6 +77,25 @@ const productDesign: Unit = {
 			text: 'Evaluate a product against criteria'
 		}
 	],
+	assessments: [
+		{
+			title: 'Redesign folio',
+			assessment_type: 'Design project',
+			weight: 30,
+			description: 'A brief, three sketched ideas, a tested prototype and an evaluation.',
+			class_minutes: 120,
+			curriculum_links: [
+				link('DT-4.1', 'full', 'consolidated'),
+				link('DT-4.4', 'full', 'developed')
+			]
+		},
+		{
+			title: 'Prototype pitch',
+			assessment_type: 'Presentation',
+			weight: 10,
+			offerings: ['2026-y10-class-2']
+		}
+	],
 	lessons: [
 		'lessons/01_what_makes_good_design.json',
 		'lessons/02_writing_a_brief.json',

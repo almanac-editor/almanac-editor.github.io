@@ -17,6 +17,8 @@ export const links = {
 	newClass: (from?: string | null) => resolve('/new-class') + query({ from }),
 	unitEdit: (u: string, o?: string | null, t?: string | null) =>
 		resolve('/unit-edit') + query({ u, o, t }),
+	unitTasks: (u: string, o?: string | null, t?: string | null) =>
+		resolve('/unit-tasks') + query({ u, o, t }),
 	outcomes: (u: string, o?: string | null, t?: string | null) =>
 		resolve('/outcomes') + query({ u, o, t }),
 	newUnit: (s?: string | null) => resolve('/new-unit') + query({ s }),

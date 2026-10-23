@@ -44,6 +44,7 @@ src/lib/domain/   plain TypeScript, no Svelte, unit-tested
   newLesson.ts    a new plan: its file name, and the unit's index
   newUnit.ts      a new unit, and a new subject: where they go, what they hold
   unitEdit.ts     a unit's own fields and dot points; a subject's outcome.json
+  tasks.ts        a unit's assessment tasks: which a class sat, and editing them
   layout.ts       where units, offerings, schemas and content files are
   validate.ts     the data repo's own schemas/*.schema.json, at run time
   starter.ts      starter schemas, written into a folder that starts empty
@@ -66,7 +67,10 @@ src/lib/components/, src/routes/   UI
     it empty.
   - Check against a real clone with `DATA_REPO=../subject-almanac npm test`.
     Run it after any change to `format.ts`, `lessonEdit.ts`, `offeringEdit.ts`,
-    `offerings.ts` or `deliveries.ts`.
+    `offerings.ts`, `tasks.ts` or `deliveries.ts`.
+  - Numbers are whole. A task's `weight` is a `number` in the schema, but
+    Python writes `12.0` where JavaScript writes `12`, so the editor takes
+    whole weights only.
 - **The editor never touches** a plan's `materials` (derived; the data repo's
   `materials.yml` Action regenerates it), a saved plan's curriculum link
   id/coverage/mode/framework, or a resource's url/canvas/file. A new plan's
@@ -79,8 +83,9 @@ src/lib/components/, src/routes/   UI
   starter schemas with its first unit. Files that already hold plans but no
   `schemas/` save unchecked; the app never adds schemas to them. The starter
   schemas must never be stricter than a real repo's (a `DATA_REPO` test checks).
-- **Duplicated logic.** `offerings.ts` and `deliveries.ts` duplicate Python in
-  the data repo (`offering_lessons.py`, `deliveries.py`). The `DATA_REPO`
+- **Duplicated logic.** `offerings.ts`, `tasks.ts` (`tasksForOffering`) and
+  `deliveries.ts` duplicate Python in the data repo (`offering_lessons.py`,
+  `deliveries.py`). The `DATA_REPO`
   parity tests compare them; keep them passing.
 - **Feedback lives on delivery records**
   (`offerings/<class>/taught/<lesson path>.json`), never on the lesson. Items

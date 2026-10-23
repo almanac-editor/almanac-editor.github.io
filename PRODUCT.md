@@ -43,8 +43,9 @@ available, never required.
 
 ## Operating Context
 
-- Structure: subjects contain units; a unit lists lesson plans and a
-  syllabus registry; an offering is one class (year group, label, year) that
+- Structure: subjects contain units; a unit lists lesson plans, a
+  syllabus registry and its assessment tasks (each with a weight, the
+  classes that sat it, and the dot points it evidences); an offering is one class (year group, label, year) that
   teaches units in a chosen order and term.
 - A lesson plan has a title, description, length, summary, a run sheet of
   timed sections (kind: talk / activity; tier: core / stretch), learning
