@@ -139,8 +139,8 @@
 
 	<h3>Links to what the class saw (optional)</h3>
 	<p class="hint first">
-		The deck, workbook or handout as the class had it, from your school’s cloud storage. You can add
-		them later.
+		The deck, workbook or handout as the class had it, from your school’s cloud storage. Use a
+		school-wide sharing link to a shared drive, so colleagues can open it. You can add them later.
 	</p>
 	<MaterialRows bind:items={entry.materials} />
 	<p class="hint">

@@ -92,8 +92,9 @@
 	{/if}
 	<MaterialRows bind:items />
 	<p class="hint">
-		Paste links from your school’s cloud storage, such as OneDrive, Google Drive or SharePoint.
-		Almanac only stores the links; they open when clicked.
+		Paste links from your school’s cloud storage, such as OneDrive, Google Drive or SharePoint. Use
+		a school-wide sharing link to a shared drive, so colleagues can open it. Almanac only stores the
+		links; they open when clicked.
 	</p>
 
 	{#snippet foot()}
