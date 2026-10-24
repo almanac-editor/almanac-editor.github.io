@@ -1,0 +1,57 @@
+# Runs on every pull request the same checks the deploy runs on main, so a
+# change that would break the deploy shows up before it is merged. Also audits
+# the dependencies, on each pull request and weekly, since advisories turn up
+# without any change here.
+name: Checks
+
+on:
+  pull_request:
+  schedule:
+    - cron: '0 20 * * 0'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: checks-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    if: github.event_name != 'schedule'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run check
+      - run: npm test
+      - run: npm run build
+
+  audit:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+      # Every advisory in what ships to the browser, and anything moderate or
+      # worse in the dev tooling, which runs on the teacher's machine.
+      - run: npm audit --omit=dev
+      - run: npm audit --audit-level=moderate
+
+  # Flags a pull request whose dependency changes bring in a known advisory,
+  # and names the package in the pull request.
+  dependency-review:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/dependency-review-action@v4
+        with:
+          fail-on-severity: moderate
