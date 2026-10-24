@@ -13,6 +13,7 @@ import {
 	lessonRef,
 	newDelivery,
 	offeringLessons,
+	plansAtRisk,
 	plansToKeep,
 	recordPaths,
 	resolveFeedback,
@@ -117,26 +118,101 @@ export class Data {
 		if (!keeping.length) {
 			await this.store.createJson(path, doc, `Add class ${doc.id}`);
 		} else {
-			const commit = await this.store.head();
-			const stamp = keptStamp(today(), doc.id, commit);
-			const writes: Write[] = [{ path, doc, sha: null }];
-			for (const k of keeping) {
-				const lesson = (await this.lesson(join(k.offering.subject, k.ref))).doc;
-				const held = (await this.store.has(k.recordPath))
-					? await this.store.readJson<DeliveryRecord>(k.recordPath)
-					: null;
-				const record = keepPlan(held?.doc ?? null, k.offering.id, k.ref, lesson, commit, stamp);
-				await this.check('delivery.schema.json', record);
-				writes.push({ path: k.recordPath, doc: record, sha: held?.sha ?? null });
-			}
-			const n = keeping.length;
+			const kept = await this.keptWrites(
+				keeping,
+				`when ${doc.id} was created`,
+				async (k) => (await this.lesson(join(k.offering.subject, k.ref))).doc
+			);
 			await this.store.writeMany(
-				writes,
-				`Add class ${doc.id}, keeping ${n} plan${n === 1 ? '' : 's'} from earlier classes`
+				[{ path, doc, sha: null }, ...kept],
+				`Add class ${doc.id}, keeping ${plans(keeping.length)} from earlier classes`
 			);
 		}
 		this.offeringsPromise = null;
 		return path;
+	}
+
+	/**
+	 * Saves a lesson. With `keep`, the earlier classes' plans go in the same
+	 * commit, kept as `before`, the lesson as it was loaded, which is what those
+	 * classes had. Returns the lesson's new version id. Throws ConflictError if
+	 * the lesson or a record changed since it was read.
+	 */
+	async saveLesson(
+		path: string,
+		next: Lesson,
+		sha: string,
+		message: string,
+		keep: ToKeep[] = [],
+		before: Lesson | null = null
+	): Promise<string> {
+		const keeping = before ? keep.filter((k) => k.outcome !== 'several') : [];
+		if (!keeping.length) return this.store.writeJson(path, next, sha, message);
+		const kept = await this.keptWrites(
+			keeping,
+			'before the lesson was edited',
+			async () => before as Lesson
+		);
+		await this.store.writeMany(
+			[{ path, doc: next, sha }, ...kept],
+			`${message}, keeping ${plans(keeping.length)} from earlier classes`
+		);
+		return (await this.store.readText(path)).sha;
+	}
+
+	/** The earlier classes' records with each plan kept, ready to write together. */
+	private async keptWrites(
+		keeping: ToKeep[],
+		why: string,
+		planOf: (k: ToKeep) => Promise<Lesson>
+	): Promise<Write[]> {
+		const commit = await this.store.head();
+		const stamp = keptStamp(today(), why, commit);
+		const writes: Write[] = [];
+		for (const k of keeping) {
+			const held = (await this.store.has(k.recordPath))
+				? await this.store.readJson<DeliveryRecord>(k.recordPath)
+				: null;
+			const record = keepPlan(
+				held?.doc ?? null,
+				k.offering.id,
+				k.ref,
+				await planOf(k),
+				commit,
+				stamp
+			);
+			await this.check('delivery.schema.json', record);
+			writes.push({ path: k.recordPath, doc: record, sha: held?.sha ?? null });
+		}
+		return writes;
+	}
+
+	/**
+	 * The plans saving this lesson would put at risk: earlier classes that took
+	 * it with no plan kept, while a later year's class takes it too.
+	 */
+	async plansAtRisk(lessonPath: string): Promise<ToKeep[]> {
+		const at = lessonRef(lessonPath);
+		if (!at) return [];
+		const [paths, offerings] = await Promise.all([this.store.paths(), this.offerings()]);
+		const subject = normalise(at.subject);
+		const classes = await Promise.all(
+			offerings
+				.filter(([, o]) => normalise(o.subject ?? '') === subject)
+				.map(async ([path, offering]) => ({
+					path,
+					offering,
+					lessons: await this.lessonsOf(offering)
+				}))
+		);
+		const records = new Map<string, DeliveryRecord>();
+		await Promise.all(
+			classes
+				.map((c) => deliveryPath(c.path, at.ref))
+				.filter((p) => paths.has(p))
+				.map(async (p) => records.set(p, (await this.store.readJson<DeliveryRecord>(p)).doc))
+		);
+		return plansAtRisk(at.ref, classes, records);
 	}
 
 	/**
@@ -479,4 +555,9 @@ export class Data {
 /** An Error that lists a schema's problems in plain words, one sentence each. */
 function problemError(schema: string, problems: Problem[]): Error {
 	return new Error(describeProblems(schema, problems).join(' '));
+}
+
+/** "1 plan", "3 plans". */
+function plans(n: number): string {
+	return `${n} plan${n === 1 ? '' : 's'}`;
 }
