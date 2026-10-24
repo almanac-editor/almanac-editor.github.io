@@ -9,7 +9,16 @@ import { execFileSync } from 'node:child_process';
 import { readdirSync, readFileSync, statSync } from 'node:fs';
 import { join as joinFs, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
-import { feedbackEntries, lessonRef, recordPaths, type DeliveryRecord } from './deliveries.ts';
+import {
+	deliveryPath,
+	feedbackEntries,
+	keepOutcome,
+	lessonRef,
+	offeringLessons,
+	plansToKeep,
+	recordPaths,
+	type DeliveryRecord
+} from './deliveries.ts';
 import { dump } from './format.ts';
 import { unitDirs } from './layout.ts';
 import { fromDraft, toDraft } from './lessonEdit.ts';
@@ -175,6 +184,97 @@ print(json.dumps({p.as_posix(): lesson_ref(p) for p in sorted(Path("subjects").g
 		);
 		const actual = Object.fromEntries(lessons.map((f) => [f, lessonRef(f)?.ref]));
 		expect(actual).toEqual(expected);
+	});
+
+	/** Every lesson a class takes, read from the clone as `Data.lessonsOf` reads a store. */
+	const lessonsOfClass = (o: Offering) => {
+		const subject = o.subject.replace(/\/$/, '');
+		return offeringLessons(
+			o,
+			(unit) => {
+				try {
+					return (JSON.parse(read(`${subject}/${unit}/unit.json`)) as Unit).lessons ?? [];
+				} catch {
+					return null;
+				}
+			},
+			(dir) =>
+				files
+					.filter((f) => f.startsWith(`${subject}/${dir}/`))
+					.map((f) => f.slice(subject.length + 1))
+		);
+	};
+	const python = (code: string) =>
+		JSON.parse(
+			execFileSync(
+				'python3',
+				[
+					'-c',
+					`import json, sys\nfrom pathlib import Path\nsys.path.insert(0, "scripts")\n${code}`
+				],
+				{
+					cwd: repo,
+					encoding: 'utf-8'
+				}
+			)
+		);
+
+	it('lists each class’s lessons as offering_lesson_refs in deliveries.py does', () => {
+		const expected: Record<string, string[]> = python(`
+from deliveries import offering_lesson_refs
+out = {}
+for p in sorted(Path("offerings").glob("*.json")):
+    o = json.loads(p.read_text(encoding="utf-8"))
+    base = Path(o["subject"])
+    rj = lambda rel, base=base: json.loads((base / rel).read_text(encoding="utf-8"))
+    lj = lambda rel, base=base: sorted(q.relative_to(base).as_posix() for q in (base / rel).rglob("*.json"))
+    out[p.as_posix()] = offering_lesson_refs(o, rj, lj)
+print(json.dumps(out))
+`);
+		const actual = Object.fromEntries(
+			offerings.map((f) => [f, lessonsOfClass(JSON.parse(read(f)) as Offering).map((l) => l.ref)])
+		);
+		expect(actual).toEqual(expected);
+	});
+
+	it('decides each lesson’s keeping as snapshot in deliveries.py does', () => {
+		const expected: Record<string, [string, string][]> = python(`
+from deliveries import snapshot
+names = {"written": "write", "plan added": "add", "has a plan": "has"}
+out = {}
+for p in sorted(Path("offerings").glob("*.json")):
+    out[p.as_posix()] = [[ref, names.get(outcome, "several")] for ref, outcome in snapshot(p, dry_run=True)]
+print(json.dumps(out))
+`);
+		const actual = Object.fromEntries(
+			offerings.map((f) => [
+				f,
+				lessonsOfClass(JSON.parse(read(f)) as Offering).map(({ ref }) => {
+					const path = deliveryPath(f, ref);
+					const record = records.includes(path) ? (JSON.parse(read(path)) as DeliveryRecord) : null;
+					return [ref, keepOutcome(record)];
+				})
+			])
+		);
+		expect(actual).toEqual(expected);
+		// snapshot reads every plan through git show, so this takes a while.
+	}, 120_000);
+
+	it('finds the plans at risk as missing_plans in deliveries.py does', () => {
+		const expected: string[] = python(`
+from deliveries import missing_plans
+print(json.dumps(missing_plans()))
+`);
+		const classes = offerings.map((path) => {
+			const offering = JSON.parse(read(path)) as Offering;
+			return { path, offering, lessons: lessonsOfClass(offering) };
+		});
+		const held = new Map(records.map((r) => [r, JSON.parse(read(r)) as DeliveryRecord]));
+		const actual = new Set<string>();
+		for (const next of classes) {
+			for (const k of plansToKeep(next, classes, held)) actual.add(`${k.offering.id}  ${k.ref}`);
+		}
+		expect([...actual].sort()).toEqual([...new Set(expected)].sort());
 	});
 
 	it('lists open feedback as scripts/deliveries.py does', () => {

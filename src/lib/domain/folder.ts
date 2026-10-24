@@ -14,7 +14,7 @@
 
 import { dump } from './format.ts';
 import { ConflictError, NotFoundError, type Loaded } from './repo.ts';
-import type { Store } from './store.ts';
+import type { Store, Write } from './store.ts';
 
 export interface FolderFile {
 	kind: 'file';
@@ -103,6 +103,24 @@ export class FolderStore implements Store {
 			throw new ConflictError(`${path} changed on disk since it was opened.`);
 		}
 		return this.write(handle, doc);
+	}
+
+	/** A folder has no commits: every file is checked, then each is written in turn. */
+	async writeMany(files: Write[]): Promise<void> {
+		for (const file of files) {
+			if (file.sha === null) {
+				if (await this.has(file.path)) throw new ConflictError(`${file.path} already exists.`);
+				continue;
+			}
+			const current = await (await (await this.file(file.path)).getFile()).text();
+			if ((await digest(current)) !== file.sha) {
+				throw new ConflictError(`${file.path} changed on disk since it was opened.`);
+			}
+		}
+		for (const file of files) {
+			if (file.sha === null) await this.createJson(file.path, file.doc);
+			else await this.writeJson(file.path, file.doc, file.sha);
+		}
 	}
 
 	async createJson(path: string, doc: unknown): Promise<string> {

@@ -8,15 +8,22 @@
 import type { Schema } from '@cfworker/json-schema';
 import {
 	deliveryPath,
+	keepPlan,
+	keptStamp,
 	lessonRef,
 	newDelivery,
+	offeringLessons,
+	plansToKeep,
 	recordPaths,
 	resolveFeedback,
+	today,
 	withDelivery,
 	withMaterials,
 	type DeliveryRecord,
 	type Resolution,
-	type TaughtInput
+	type TakenLesson,
+	type TaughtInput,
+	type ToKeep
 } from './domain/deliveries.ts';
 import {
 	contentPath,
@@ -34,7 +41,7 @@ import { isFresh, STARTER_SCHEMAS } from './domain/starter.ts';
 import { offeringPath } from './domain/newOffering.ts';
 import { byNumber } from './house.ts';
 import { ConflictError, type Loaded } from './domain/repo.ts';
-import type { Store } from './domain/store.ts';
+import type { Store, Write } from './domain/store.ts';
 import type { Lesson, Offering, Unit } from './domain/types.ts';
 import type { OutcomeSet } from './domain/unitEdit.ts';
 import { describeProblems } from './domain/fieldNames.ts';
@@ -97,20 +104,90 @@ export class Data {
 	}
 
 	/**
-	 * Saves a new class as `offerings/<id>.json` and returns its path. Throws
-	 * ConflictError if that file exists, and an Error listing the problems if
-	 * the schema refuses it.
+	 * Saves a new class as `offerings/<id>.json` and returns its path. With
+	 * `keep`, the plans earlier classes would otherwise lose go in the same
+	 * commit (see `plansToKeep`); a record with several deliveries is left.
+	 * Throws ConflictError if the class's file exists or a record changed, and
+	 * an Error listing the problems if a schema refuses either.
 	 */
-	async createOffering(doc: Offering): Promise<string> {
+	async createOffering(doc: Offering, keep: ToKeep[] = []): Promise<string> {
 		const path = offeringPath(doc.id);
-		const schemas = await this.schemas();
-		if (schemas.has('offering.schema.json')) {
-			const problems = schemas.validate('offering.schema.json', doc);
-			if (problems.length) throw problemError('offering.schema.json', problems);
+		await this.check('offering.schema.json', doc);
+		const keeping = keep.filter((k) => k.outcome !== 'several');
+		if (!keeping.length) {
+			await this.store.createJson(path, doc, `Add class ${doc.id}`);
+		} else {
+			const commit = await this.store.head();
+			const stamp = keptStamp(today(), doc.id, commit);
+			const writes: Write[] = [{ path, doc, sha: null }];
+			for (const k of keeping) {
+				const lesson = (await this.lesson(join(k.offering.subject, k.ref))).doc;
+				const held = (await this.store.has(k.recordPath))
+					? await this.store.readJson<DeliveryRecord>(k.recordPath)
+					: null;
+				const record = keepPlan(held?.doc ?? null, k.offering.id, k.ref, lesson, commit, stamp);
+				await this.check('delivery.schema.json', record);
+				writes.push({ path: k.recordPath, doc: record, sha: held?.sha ?? null });
+			}
+			const n = keeping.length;
+			await this.store.writeMany(
+				writes,
+				`Add class ${doc.id}, keeping ${n} plan${n === 1 ? '' : 's'} from earlier classes`
+			);
 		}
-		await this.store.createJson(path, doc, `Add class ${doc.id}`);
 		this.offeringsPromise = null;
 		return path;
+	}
+
+	/**
+	 * The plans a new class would put at risk: lessons it takes that an
+	 * earlier year's class of the same subject took, with no plan kept. Reads
+	 * only those lessons' records.
+	 */
+	async plansToKeep(next: Offering): Promise<ToKeep[]> {
+		const [paths, offerings] = await Promise.all([this.store.paths(), this.offerings()]);
+		const subject = normalise(next.subject ?? '');
+		const earlier = offerings.filter(
+			([, o]) => o.year < next.year && normalise(o.subject ?? '') === subject
+		);
+		const nextLessons = await this.lessonsOf(next);
+		const taken = new Set(nextLessons.map((l) => l.ref));
+		const classes = await Promise.all(
+			earlier.map(async ([path, offering]) => ({
+				path,
+				offering,
+				lessons: await this.lessonsOf(offering)
+			}))
+		);
+		const records = new Map<string, DeliveryRecord>();
+		const wanted = classes.flatMap((c) =>
+			c.lessons.filter((l) => taken.has(l.ref)).map((l) => deliveryPath(c.path, l.ref))
+		);
+		await Promise.all(
+			wanted
+				.filter((p) => paths.has(p))
+				.map(async (p) => records.set(p, (await this.store.readJson<DeliveryRecord>(p)).doc))
+		);
+		return plansToKeep({ offering: next, lessons: nextLessons }, classes, records);
+	}
+
+	/** Every lesson a class takes, as `deliveries.py` lists them. */
+	private async lessonsOf(offering: Offering): Promise<TakenLesson[]> {
+		const subject = normalise(offering.subject ?? '');
+		const paths = [...(await this.store.paths()).keys()];
+		const units = new Map<string, string[] | null>();
+		for (const entry of offering.units ?? []) {
+			if (entry.lessons || units.has(entry.unit)) continue;
+			const unit = await this.unit(join(subject, entry.unit)).catch(() => null);
+			units.set(entry.unit, unit?.lessons ?? null);
+		}
+		const listJson = (dir: string) => {
+			const prefix = `${join(subject, dir)}/`;
+			return paths
+				.filter((p) => p.startsWith(prefix) && p.endsWith('.json'))
+				.map((p) => p.slice(subject.length + 1));
+		};
+		return offeringLessons(offering, (u) => units.get(u) ?? null, listJson);
 	}
 
 	/**
