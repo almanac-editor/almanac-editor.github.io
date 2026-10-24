@@ -7,12 +7,15 @@
 	import LessonEditor from '#lib/components/LessonEditor.svelte';
 	import LessonView from '#lib/components/LessonView.svelte';
 	import PageHead from '#lib/components/PageHead.svelte';
+	import PlanCompare from '#lib/components/PlanCompare.svelte';
+	import VersionBar, { versionLabel } from '#lib/components/VersionBar.svelte';
 	import ResolveDialog from '#lib/components/ResolveDialog.svelte';
 	import TaughtDialog from '#lib/components/TaughtDialog.svelte';
 	import type { HeldRecord } from '#lib/data.ts';
 	import { formatDate } from '#lib/domain/deliveries.ts';
 	import { lessonRefs, OfferingMismatch } from '#lib/domain/offerings.ts';
 	import { join, stem } from '#lib/domain/paths.ts';
+	import { lessonVersions, versionOf, type Version } from '#lib/domain/versions.ts';
 	import type { Lesson } from '#lib/domain/types.ts';
 	import { className } from '#lib/house.ts';
 	import { links } from '#lib/links.ts';
@@ -106,6 +109,50 @@
 			.at(-1) ?? null
 	);
 
+	// This class's deliveries of the lesson, oldest first, when the page is in a class's context.
+	const mine = $derived(
+		o ? (held?.find((h) => h.offeringPath === o)?.record.deliveries ?? []) : []
+	);
+	// Which version shows, and which it is compared with. Unpicked, the page shows the
+	// version the class had (or the current plan), compared with the one before it.
+	let shownPick = $state<number | null>(null);
+	let againstPick = $state<number | null>(null);
+	let comparing = $state(false);
+	$effect(() => {
+		void path;
+		void o;
+		shownPick = null;
+		againstPick = null;
+		comparing = false;
+	});
+
+	function shownIn(versions: Version[]): number {
+		if (shownPick !== null && shownPick < versions.length) return shownPick;
+		const mineAt = o ? versionOf(versions, o) : -1;
+		return mineAt >= 0 ? mineAt : versions.findIndex((v) => v.current);
+	}
+
+	function againstIn(versions: Version[], shown: number): number {
+		if (againstPick !== null && againstPick !== shown && againstPick < versions.length) {
+			return againstPick;
+		}
+		return shown > 0 ? shown - 1 : shown + 1;
+	}
+
+	const names = $derived(
+		new Map(
+			(held ?? []).flatMap((h) =>
+				h.offeringPath && h.offering ? [[h.offeringPath, className(h.offering)] as const] : []
+			)
+		)
+	);
+
+	function commitHref(sha: string): string | null {
+		if (session.source !== 'github') return null;
+		const { owner, repo } = session.target;
+		return `https://github.com/${encodeURIComponent(owner)}/${encodeURIComponent(repo)}/commit/${encodeURIComponent(sha)}`;
+	}
+
 	let marking = $state(false);
 	let resolving = $state(false);
 	let afterSave = $state<{ commit: string | null } | null>(null);
@@ -155,6 +202,10 @@
 		{@const prev = index > 0 ? links.lesson(u, refs[index - 1], o, t) : null}
 		{@const next =
 			index >= 0 && index < refs.length - 1 ? links.lesson(u, refs[index + 1], o, t) : null}
+		{@const versions = lessonVersions(held ?? [], current.lesson)}
+		{@const shown = shownIn(versions)}
+		{@const against = againstIn(versions, shown)}
+		{@const past = !editing && !versions[shown].current ? versions[shown].plan : null}
 		<PageHead
 			crumbs={[
 				...(offering ? [{ href: links.home(), label: className(offering) }] : []),
@@ -162,7 +213,7 @@
 			]}
 			numeral={index >= 0 ? String(index + 1).padStart(2, '0') : null}
 			title={current.lesson.title}
-			lede={editing ? null : current.lesson.description}
+			lede={editing ? null : (past ?? current.lesson).description}
 		>
 			{#snippet actions()}
 				{#if !editing}
@@ -231,18 +282,44 @@
 					</LessonEditor>
 				{/key}
 			{:else}
-				<LessonView lesson={current.lesson} {registry} {content}>
-					{#snippet feedback()}
-						<FeedbackList
-							{held}
-							error={heldError}
-							onclose={() => {
-								afterSave = null;
-								resolving = true;
-							}}
-						/>
-					{/snippet}
-				</LessonView>
+				{#key `${path}|${o}`}
+					<VersionBar
+						{versions}
+						bind:shown={() => shown, (i) => (shownPick = i)}
+						bind:against={() => against, (i) => (againstPick = i)}
+						bind:comparing
+						{names}
+						{mine}
+						whom={offering ? className(offering) : null}
+						offeringPath={offering ? o : null}
+						{commitHref}
+					/>
+				{/key}
+				{#if comparing && versions.length > 1}
+					{@const [older, newer] = [Math.min(shown, against), Math.max(shown, against)]}
+					<PlanCompare
+						before={{ plan: versions[older].plan, label: versionLabel(versions[older], names) }}
+						after={{ plan: versions[newer].plan, label: versionLabel(versions[newer], names) }}
+						{registry}
+					/>
+				{:else}
+					<LessonView
+						lesson={past ?? current.lesson}
+						{registry}
+						content={past ? undefined : content}
+					>
+						{#snippet feedback()}
+							<FeedbackList
+								{held}
+								error={heldError}
+								onclose={() => {
+									afterSave = null;
+									resolving = true;
+								}}
+							/>
+						{/snippet}
+					</LessonView>
+				{/if}
 
 				<nav class="pager" aria-label="Lessons in order">
 					{#if prev}

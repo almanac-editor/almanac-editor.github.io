@@ -162,6 +162,21 @@ describe.skipIf(!root)('real data repo', () => {
 		expect(invalid).toEqual([]);
 	});
 
+	it('finds each lesson’s ref as scripts/deliveries.py does', () => {
+		const python = `
+import json, sys
+from pathlib import Path
+sys.path.insert(0, "scripts")
+from deliveries import lesson_ref
+print(json.dumps({p.as_posix(): lesson_ref(p) for p in sorted(Path("subjects").glob("**/lessons/**/*.json"))}))
+`;
+		const expected: Record<string, string> = JSON.parse(
+			execFileSync('python3', ['-c', python], { cwd: repo, encoding: 'utf-8' })
+		);
+		const actual = Object.fromEntries(lessons.map((f) => [f, lessonRef(f)?.ref]));
+		expect(actual).toEqual(expected);
+	});
+
 	it('lists open feedback as scripts/deliveries.py does', () => {
 		const python = `
 import json, sys

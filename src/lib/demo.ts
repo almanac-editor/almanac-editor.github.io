@@ -9,7 +9,7 @@
  */
 
 import { decodeBase64, encodeBase64, type RepoTarget } from './domain/repo.ts';
-import type { DeliveryRecord } from './domain/deliveries.ts';
+import { snapshot, type DeliveryRecord } from './domain/deliveries.ts';
 import type { Kind, Lesson, Offering, Tier, Unit } from './domain/types.ts';
 
 export const DEMO_TARGET: RepoTarget = { owner: 'sample', repo: 'almanac', branch: 'main' };
@@ -500,6 +500,25 @@ const offerings: Record<string, Offering> = {
  * What the classes were taught, by record path. The plans are left out of the
  * snapshots here to keep the sample short; the app writes them in full.
  */
+/**
+ * Good design as the 2025 class had it: no talk before the ranking, a longer
+ * ranking and share, no stretch task, and five minutes over the hour.
+ */
+function goodDesign2025(): Lesson {
+	const plan = snapshot(productLessons['01_what_makes_good_design']);
+	const minutes: Record<string, number> = {
+		'Hook: the worst object': 10,
+		'Rank the table': 30,
+		'Share the rules': 20
+	};
+	plan.sections = plan.sections
+		.filter((s) => s.tier !== 'stretch' && s.label !== 'Design is a choice')
+		.map((s) => ({ ...s, duration_minutes: minutes[s.label ?? ''] ?? s.duration_minutes }));
+	plan.sections[0].section = 'Pass round a badly designed bottle opener and let everyone try it.';
+	plan.success_criteria = plan.success_criteria.slice(0, 1);
+	return plan;
+}
+
 const deliveries: Record<string, DeliveryRecord> = {
 	'offerings/2025_y07_class_a/taught/units/product_design/lessons/01_what_makes_good_design.json': {
 		offering: '2025-y7-class-a',
@@ -508,6 +527,7 @@ const deliveries: Record<string, DeliveryRecord> = {
 			{
 				taught: '2025-05-06',
 				by: 'Sample Teacher',
+				plan: goodDesign2025(),
 				feedback: [
 					{
 						issue: 'The bottle opener hook took over; nobody wanted to put it down.',
@@ -536,6 +556,7 @@ const deliveries: Record<string, DeliveryRecord> = {
 				taught: '2026-02-10',
 				by: 'Sample Teacher',
 				deviations: 'Fire drill in the middle; skipped the stretch task.',
+				plan: snapshot(productLessons['01_what_makes_good_design']),
 				feedback: [
 					{
 						issue: 'Ranking ran long; groups argued about the stapler for ten minutes.',

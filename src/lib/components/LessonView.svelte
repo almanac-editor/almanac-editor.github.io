@@ -22,7 +22,8 @@
 	}: {
 		lesson: Lesson;
 		registry: Map<string, RegistryEntry>;
-		content: string | null;
+		/** The content file; undefined for a taught plan, whose content was not kept. */
+		content: string | null | undefined;
 		/** Feedback from the delivery records, for the margin. */
 		feedback?: Snippet;
 	} = $props();
@@ -128,17 +129,19 @@
 			</section>
 		{/if}
 
-		<section>
-			<h2>Content file</h2>
-			{#if content === null}
-				<p class="muted">No content file written yet.</p>
-			{:else}
-				<details class="content">
-					<summary><Icon name="file" size={16} /> Show the content file</summary>
-					<pre>{content}</pre>
-				</details>
-			{/if}
-		</section>
+		{#if content !== undefined}
+			<section>
+				<h2>Content file</h2>
+				{#if content === null}
+					<p class="muted">No content file written yet.</p>
+				{:else}
+					<details class="content">
+						<summary><Icon name="file" size={16} /> Show the content file</summary>
+						<pre>{content}</pre>
+					</details>
+				{/if}
+			</section>
+		{/if}
 	</div>
 
 	<aside class="margin" aria-label="Syllabus, feedback, resources and references">
