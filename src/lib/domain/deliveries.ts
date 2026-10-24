@@ -20,6 +20,7 @@
 
 import { ordered } from './lessonEdit.ts';
 import { normaliseText } from './format.ts';
+import { materialsFrom, type MaterialDraft, type MaterialLink } from './materials.ts';
 import type { Lesson } from './types.ts';
 
 export type FeedbackStatus = 'open' | 'applied' | 'declined';
@@ -42,7 +43,7 @@ export interface Delivery {
 	plan?: Lesson;
 	plan_commit?: string;
 	source?: string;
-	materials?: unknown[];
+	materials?: MaterialLink[];
 	feedback?: FeedbackItem[];
 	[key: string]: unknown;
 }
@@ -187,12 +188,14 @@ export interface TaughtInput {
 	by: string;
 	deviations: string;
 	feedback: { issue: string; change: string }[];
+	/** Links to what the class saw; optional, as it may be added afterwards. */
+	materials?: MaterialDraft[];
 }
 
 /**
  * A new delivery from what the teacher typed. Blank fields are left out, and
  * feedback with no issue is dropped. Each item is open and raised on the day
- * the lesson ran.
+ * the lesson ran. A link that is not `https:` is refused.
  */
 export function newDelivery(input: TaughtInput, plan: Lesson, commit: string | null): Delivery {
 	const text = (value: string) => normaliseText(value).trim();
@@ -201,6 +204,8 @@ export function newDelivery(input: TaughtInput, plan: Lesson, commit: string | n
 	if (text(input.deviations)) delivery.deviations = text(input.deviations);
 	delivery.plan = snapshot(plan);
 	if (commit) delivery.plan_commit = commit;
+	const materials = materialsFrom(input.materials ?? []);
+	if (materials.length) delivery.materials = materials;
 	const feedback = input.feedback
 		.filter((f) => text(f.issue))
 		.map((f) => {
@@ -264,6 +269,26 @@ export function resolveFeedback(record: DeliveryRecord, resolutions: Resolution[
 			return ordered(next, Object.keys(item), FEEDBACK_ORDER);
 		});
 		return { ...delivery, feedback };
+	});
+	return { ...record, deliveries };
+}
+
+/**
+ * The record with one delivery's links replaced. No links removes the key.
+ * Every other key keeps its value and its place.
+ */
+export function withMaterials(
+	record: DeliveryRecord,
+	delivery: number,
+	drafts: MaterialDraft[]
+): DeliveryRecord {
+	const links = materialsFrom(drafts);
+	const deliveries = record.deliveries.map((d, i) => {
+		if (i !== delivery) return d;
+		const next: Delivery = { ...d };
+		if (links.length) next.materials = links;
+		else delete next.materials;
+		return ordered(next, Object.keys(d), DELIVERY_ORDER);
 	});
 	return { ...record, deliveries };
 }

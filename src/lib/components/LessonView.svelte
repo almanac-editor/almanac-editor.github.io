@@ -18,7 +18,8 @@
 		lesson,
 		registry,
 		content,
-		feedback
+		feedback,
+		materials
 	}: {
 		lesson: Lesson;
 		registry: Map<string, RegistryEntry>;
@@ -26,6 +27,8 @@
 		content: string | null | undefined;
 		/** Feedback from the delivery records, for the margin. */
 		feedback?: Snippet;
+		/** Links to what a class saw, or where the plan's files land, for the margin. */
+		materials?: Snippet;
 	} = $props();
 
 	const t = $derived(timing(lesson));
@@ -144,7 +147,7 @@
 		{/if}
 	</div>
 
-	<aside class="margin" aria-label="Syllabus, feedback, resources and references">
+	<aside class="margin" aria-label="Syllabus, feedback, materials, resources and references">
 		<section>
 			<h2>Syllabus</h2>
 			{#if lesson.curriculum_links.length}
@@ -167,6 +170,8 @@
 		</section>
 
 		{#if feedback}<div>{@render feedback()}</div>{/if}
+
+		{#if materials}<div>{@render materials()}</div>{/if}
 
 		{#if lesson.resources?.length}
 			<section>

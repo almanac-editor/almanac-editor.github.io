@@ -13,6 +13,7 @@ import {
 	recordPaths,
 	resolveFeedback,
 	withDelivery,
+	withMaterials,
 	type DeliveryRecord,
 	type Resolution,
 	type TaughtInput
@@ -25,6 +26,7 @@ import {
 	schemaPaths,
 	unitDirs
 } from './domain/layout.ts';
+import type { MaterialDraft } from './domain/materials.ts';
 import { basename, join, normalise, stem } from './domain/paths.ts';
 import { withColour } from './domain/offeringEdit.ts';
 import { withLesson } from './domain/newLesson.ts';
@@ -335,7 +337,7 @@ export class Data {
 		input: TaughtInput
 	): Promise<void> {
 		const at = lessonRef(lessonPath);
-		if (!at) throw new Error(`${lessonPath} is not under a units/ directory.`);
+		if (!at) throw new Error(`${lessonPath} is not under a units/ or revision/ directory.`);
 		const path = deliveryPath(offeringPath, at.ref);
 		const delivery = newDelivery(input, plan, await this.store.head());
 		const message = `Taught ${stem(lessonPath)} to ${offering.id}`;
@@ -357,6 +359,21 @@ export class Data {
 	 */
 	async resolve(held: HeldRecord, resolutions: Resolution[], message: string): Promise<void> {
 		const next = resolveFeedback(held.record, resolutions);
+		await this.check('delivery.schema.json', next);
+		await this.store.writeJson(held.path, next, held.sha, message);
+	}
+
+	/**
+	 * Sets the links on one delivery in a record. Throws ConflictError if the
+	 * record changed since `held` was read.
+	 */
+	async saveMaterials(
+		held: HeldRecord,
+		delivery: number,
+		drafts: MaterialDraft[],
+		message: string
+	): Promise<void> {
+		const next = withMaterials(held.record, delivery, drafts);
 		await this.check('delivery.schema.json', next);
 		await this.store.writeJson(held.path, next, held.sha, message);
 	}

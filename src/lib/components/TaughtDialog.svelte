@@ -1,9 +1,11 @@
 <script lang="ts">
 	import { tick } from 'svelte';
 	import Icon from './Icon.svelte';
+	import MaterialRows from './MaterialRows.svelte';
 	import Sheet from './Sheet.svelte';
 	import type { Data } from '#lib/data.ts';
 	import { today } from '#lib/domain/deliveries.ts';
+	import type { MaterialDraft } from '#lib/domain/materials.ts';
 	import { AuthError, ConflictError } from '#lib/domain/repo.ts';
 	import type { Lesson, Offering } from '#lib/domain/types.ts';
 	import { className } from '#lib/house.ts';
@@ -36,7 +38,8 @@
 		taught: today(),
 		by: session.teacher,
 		deviations: '',
-		feedback: [{ issue: '', change: '' }]
+		feedback: [{ issue: '', change: '' }],
+		materials: [] as MaterialDraft[]
 	});
 
 	let entry = $state(blank());
@@ -133,6 +136,13 @@
 	<button type="button" class="add" onclick={addFeedback}>
 		<Icon name="plus" size={16} /> Add feedback
 	</button>
+
+	<h3>Links to what the class saw (optional)</h3>
+	<p class="hint first">
+		The deck, workbook or handout as the class had it, from your school’s cloud storage. Use a
+		school-wide sharing link to a shared drive, so colleagues can open it. You can add them later.
+	</p>
+	<MaterialRows bind:items={entry.materials} />
 	<p class="hint">
 		Saves the plan as it stands{session.source === 'github' ? ' and the commit it is at' : ''}, so
 		this class’s history keeps what it was taught after the lesson changes.
@@ -183,6 +193,10 @@
 
 	.add {
 		border-style: dashed;
+	}
+
+	.hint.first {
+		margin: 0 0 8px;
 	}
 
 	.hint {

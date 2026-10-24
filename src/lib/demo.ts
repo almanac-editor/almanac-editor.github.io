@@ -41,7 +41,8 @@ function lesson(
 		...(more.assessment ? { assessment: more.assessment } : {}),
 		...(more.differentiation ? { differentiation: more.differentiation } : {}),
 		...(more.resources ? { resources: more.resources } : {}),
-		...(more.references ? { references: more.references } : {})
+		...(more.references ? { references: more.references } : {}),
+		...(more.materials ? { materials: more.materials } : {})
 	};
 }
 
@@ -185,7 +186,20 @@ const productLessons: Record<string, Lesson> = {
 					path: 'data/sample_rankings.csv',
 					used_for: 'Section 3: the ranking a group compares its own with.'
 				}
-			]
+			],
+			// Derived in a real repo by scripts/lesson_materials.py: where each class's outputs land.
+			materials: {
+				content: '01_what_makes_good_design.md',
+				workbook: {
+					'2026-y7-class-a': 'dist/workbooks/2026-y7-class-a/01_what_makes_good_design.html'
+				},
+				deck: { '2026-y7-class-a': 'dist/decks/2026-y7-class-a/01_what_makes_good_design.pptx' },
+				deck_pdf: {
+					'2026-y7-class-a': 'dist/decks/2026-y7-class-a/01_what_makes_good_design.pdf'
+				},
+				handout: {},
+				files: []
+			}
 		}
 	),
 	'02_writing_a_brief': lesson(
@@ -528,6 +542,14 @@ const deliveries: Record<string, DeliveryRecord> = {
 				taught: '2025-05-06',
 				by: 'Sample Teacher',
 				plan: goodDesign2025(),
+				materials: [
+					{
+						kind: 'deck',
+						label: 'Slides as shown',
+						url: 'https://drive.example.com/y7a-2025/good-design-slides'
+					},
+					{ kind: 'workbook', url: 'https://drive.example.com/y7a-2025/good-design-workbook' }
+				],
 				feedback: [
 					{
 						issue: 'The bottle opener hook took over; nobody wanted to put it down.',

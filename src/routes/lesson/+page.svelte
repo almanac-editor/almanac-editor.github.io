@@ -6,6 +6,8 @@
 	import Icon from '#lib/components/Icon.svelte';
 	import LessonEditor from '#lib/components/LessonEditor.svelte';
 	import LessonView from '#lib/components/LessonView.svelte';
+	import MaterialsDialog from '#lib/components/MaterialsDialog.svelte';
+	import MaterialsPanel from '#lib/components/MaterialsPanel.svelte';
 	import PageHead from '#lib/components/PageHead.svelte';
 	import PlanCompare from '#lib/components/PlanCompare.svelte';
 	import VersionBar, { versionLabel } from '#lib/components/VersionBar.svelte';
@@ -33,13 +35,16 @@
 		void session.revision;
 		if (!data || !path) return null;
 		return (async () => {
-			const [unit, loaded, content, schemas, offering] = await Promise.all([
+			const [unit, loaded, content, schemas, offering, offerings] = await Promise.all([
 				data.unit(u),
 				data.lesson(path),
 				data.content(path),
 				data.schemas(),
-				o ? data.offering(o) : Promise.resolve(null)
+				o ? data.offering(o) : Promise.resolve(null),
+				data.offerings()
 			]);
+			// Class names by offering id, for outputs listed for every class.
+			const classNames = new Map(offerings.map(([, x]) => [x.id, className(x)]));
 			let refs: string[] = [];
 			try {
 				refs = lessonRefs(u, unit, offering, t);
@@ -52,7 +57,18 @@
 			for (const ref of [refs[at + 1], refs[at - 1]]) {
 				if (ref) data.lesson(join(u, ref)).catch(() => {});
 			}
-			return { unit, loaded, content, schemas, refs, registry, offering, store: data.store, data };
+			return {
+				unit,
+				loaded,
+				content,
+				schemas,
+				refs,
+				registry,
+				offering,
+				classNames,
+				store: data.store,
+				data
+			};
 		})();
 	});
 
@@ -154,6 +170,10 @@
 	}
 
 	let marking = $state(false);
+	// The page's class's record for this lesson, whose deliveries can be given links.
+	const myRecord = $derived(o ? (held?.find((h) => h.offeringPath === o) ?? null) : null);
+	let linking = $state(false);
+	let linkingAt = $state(0);
 	let resolving = $state(false);
 	let afterSave = $state<{ commit: string | null } | null>(null);
 
@@ -196,7 +216,7 @@
 	{#await load}
 		<PageHead title={null} />
 		<div class="page"><div class="loading"><span></span><span></span><span></span></div></div>
-	{:then { unit, loaded, content, schemas, refs, registry, offering, store, data }}
+	{:then { unit, loaded, content, schemas, refs, registry, offering, classNames, store, data }}
 		{@const current = saved?.path === path ? saved : { path, lesson: loaded.doc, sha: loaded.sha }}
 		{@const index = refs.indexOf(l)}
 		{@const prev = index > 0 ? links.lesson(u, refs[index - 1], o, t) : null}
@@ -318,6 +338,21 @@
 								}}
 							/>
 						{/snippet}
+						{#snippet materials()}
+							<MaterialsPanel
+								lesson={current.lesson}
+								lessonPath={path}
+								offering={offering?.id ?? null}
+								{mine}
+								names={classNames}
+								onedit={myRecord
+									? (i) => {
+											linkingAt = i;
+											linking = true;
+										}
+									: null}
+							/>
+						{/snippet}
 					</LessonView>
 				{/if}
 
@@ -347,6 +382,20 @@
 				lessonPath={path}
 				lesson={current.lesson}
 				onsaved={() => (heldRevision += 1)}
+			/>
+		{/if}
+		{#if offering && myRecord}
+			<MaterialsDialog
+				bind:open={linking}
+				{data}
+				held={myRecord}
+				bind:delivery={linkingAt}
+				whom={className(offering)}
+				onsaved={() => (heldRevision += 1)}
+				onreload={() => {
+					data.store.refresh();
+					heldRevision += 1;
+				}}
 			/>
 		{/if}
 		{#if held}

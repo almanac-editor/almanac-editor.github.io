@@ -12,6 +12,7 @@ import {
 	snapshot,
 	today,
 	withDelivery,
+	withMaterials,
 	type DeliveryRecord
 } from './deliveries.ts';
 import { dump } from './format.ts';
@@ -153,6 +154,38 @@ describe('withDelivery', () => {
 	});
 });
 
+describe('materials on a delivery', () => {
+	const link = { kind: 'deck' as const, label: '', url: 'https://drive.example.com/deck' };
+
+	it('adds links from Mark as taught at their schema place', () => {
+		const d = newDelivery(input({ materials: [link] }), plan(), 'abc1234');
+		expect(Object.keys(d)).toEqual([
+			'taught',
+			'by',
+			'plan',
+			'plan_commit',
+			'materials',
+			'feedback'
+		]);
+		expect(d.materials).toEqual([{ kind: 'deck', url: 'https://drive.example.com/deck' }]);
+	});
+
+	it('sets one delivery’s links, keeping every other key in place, and removes them when cleared', () => {
+		const record = {
+			offering: 'a',
+			lesson: 'l',
+			deliveries: [
+				{ taught: '2026-01-01', feedback: [{ issue: 'x', status: 'open' as const }] },
+				{ taught: '2026-02-01' }
+			]
+		};
+		const added = withMaterials(record, 0, [link]);
+		expect(Object.keys(added.deliveries[0])).toEqual(['taught', 'materials', 'feedback']);
+		expect(added.deliveries[1]).toBe(record.deliveries[1]);
+		expect(withMaterials(added, 0, []).deliveries[0]).toEqual(record.deliveries[0]);
+	});
+});
+
 describe('feedback', () => {
 	const records: { path: string; record: DeliveryRecord }[] = [
 		{
@@ -288,6 +321,20 @@ describe('Data, against the sample repo', () => {
 		expect(mine?.record.lesson).toBe('units/product_design/lessons/01_what_makes_good_design.json');
 		expect(mine?.record.deliveries.map((x) => x.taught)).toEqual(['2026-07-21', '2026-07-28']);
 		expect(mine?.record.deliveries[0].plan_commit).toMatch(/^[0-9a-f]{7,40}$/);
+	});
+
+	it('saves a delivery’s links, and refuses over a record that changed since it was read', async () => {
+		const d = data();
+		const [lastYear] = await d.deliveries(lessonPath);
+		const deck = {
+			kind: 'deck' as const,
+			label: 'Slides as shown',
+			url: 'https://drive.example.com/d'
+		};
+		await d.saveMaterials(lastYear, 0, [deck], 'Add links');
+		const [after] = await d.deliveries(lessonPath);
+		expect(after.record.deliveries[0].materials).toEqual([deck]);
+		await expect(d.saveMaterials(lastYear, 0, [], 'Clear')).rejects.toBeInstanceOf(ConflictError);
 	});
 
 	it('refuses to resolve over a record that changed since it was read', async () => {
