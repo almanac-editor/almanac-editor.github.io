@@ -12,6 +12,7 @@
 	} from '#lib/domain/lessonView.ts';
 	import {
 		DIFFERENTIATION_KEYS,
+		blankReference,
 		blankSection,
 		fromDraft,
 		linkTo,
@@ -317,7 +318,7 @@
 		</section>
 	</div>
 
-	<aside class="margin" aria-label="Syllabus, feedback and resources">
+	<aside class="margin" aria-label="Syllabus, feedback, resources and references">
 		{#if feedback}<div class="slot">{@render feedback()}</div>{/if}
 
 		<section>
@@ -411,6 +412,74 @@
 				{/each}
 			</section>
 		{/if}
+
+		<section>
+			<h2>References</h2>
+			<p class="hint">Where the lesson’s claims come from, for checking them later.</p>
+			{#each draft.references as r, i (i)}
+				<fieldset class="res">
+					<legend class="sr-only">Reference {i + 1}</legend>
+					<div class="ref-head">
+						<span class="ref-num">{i + 1}</span>
+						<div class="ref-controls">
+							<button
+								type="button"
+								class="quiet icon"
+								title="Move up"
+								aria-label="Move reference {i + 1} up"
+								disabled={i === 0}
+								onclick={() => move(draft.references, i, -1)}><Icon name="up" /></button
+							>
+							<button
+								type="button"
+								class="quiet icon"
+								title="Move down"
+								aria-label="Move reference {i + 1} down"
+								disabled={i === draft.references.length - 1}
+								onclick={() => move(draft.references, i, 1)}><Icon name="down" /></button
+							>
+							<button
+								type="button"
+								class="quiet icon danger"
+								title="Remove reference"
+								aria-label="Remove reference {i + 1}"
+								onclick={() => draft.references.splice(i, 1)}><Icon name="bin" /></button
+							>
+						</div>
+					</div>
+					<label class="field"
+						><span>Citation</span><textarea
+							bind:value={r.citation}
+							placeholder="APA 7, with *asterisks* around italics"></textarea></label
+					>
+					<div class="field">
+						<span>Source</span>
+						<div class="ref-source">
+							<select bind:value={r.source} aria-label="Reference {i + 1} source kind">
+								<option value="url">Link</option>
+								<option value="path">File in the repo</option>
+							</select>
+							<input
+								type="text"
+								bind:value={r.where}
+								aria-label={r.source === 'url'
+									? `Reference ${i + 1} link`
+									: `Reference ${i + 1} file`}
+								placeholder={r.source === 'url' ? 'https://' : 'scripts/make_data.py'}
+							/>
+						</div>
+					</div>
+					<label class="field"
+						><span>Used for</span><textarea
+							bind:value={r.used_for}
+							placeholder="The section, and the claims that rest on this source"></textarea></label
+					>
+				</fieldset>
+			{/each}
+			<button type="button" class="add" onclick={() => draft.references.push(blankReference())}>
+				<Icon name="plus" size={16} /> Add reference
+			</button>
+		</section>
 	</aside>
 </div>
 
@@ -716,6 +785,30 @@
 		padding-bottom: 6px;
 		margin-bottom: 14px;
 		border-bottom: 1px solid var(--rule);
+	}
+
+	.ref-head {
+		display: flex;
+		align-items: center;
+		justify-content: space-between;
+		margin-bottom: 6px;
+	}
+
+	.ref-num {
+		font-size: 13px;
+		font-weight: 800;
+		color: var(--house-deep);
+	}
+
+	.ref-controls {
+		display: flex;
+		gap: 2px;
+	}
+
+	.ref-source {
+		display: grid;
+		grid-template-columns: max-content minmax(0, 1fr);
+		gap: 6px;
 	}
 
 	.where {

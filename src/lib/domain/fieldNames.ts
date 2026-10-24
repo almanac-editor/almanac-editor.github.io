@@ -51,6 +51,12 @@ const lessonFields: Record<string, Field> = {
 	},
 	differentiation,
 	resources: list('Resources', 'Resource', { name: text('Name'), notes: text('Notes') }),
+	references: list('References', 'Reference', {
+		citation: text('Citation'),
+		url: text('Link'),
+		path: text('File'),
+		used_for: text('Used for')
+	}),
 	materials: text('Materials')
 };
 

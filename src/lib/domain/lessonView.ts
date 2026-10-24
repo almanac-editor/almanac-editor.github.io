@@ -50,3 +50,27 @@ export function startTimes(durations: (number | null)[]): number[] {
 		return start;
 	});
 }
+
+/**
+ * A citation in runs of plain and italic text. Citations mark italics with
+ * *asterisks*, as Markdown does; an unpaired asterisk stays as it is.
+ */
+export function citationParts(citation: string): { text: string; italic: boolean }[] {
+	return citation
+		.split(/\*([^*]+)\*/)
+		.map((text, i) => ({ text, italic: i % 2 === 1 }))
+		.filter((part) => part.text !== '');
+}
+
+/**
+ * The host name to show for a reference's link, or null when the link is not
+ * a web address and should not be made clickable.
+ */
+export function linkHost(url: string): string | null {
+	try {
+		const parsed = new URL(url);
+		return parsed.protocol === 'https:' || parsed.protocol === 'http:' ? parsed.hostname : null;
+	} catch {
+		return null;
+	}
+}

@@ -6,7 +6,9 @@
 		DIFFERENTIATION_LABELS,
 		KIND_LABELS,
 		TIER_LABELS,
+		citationParts,
 		kindClass,
+		linkHost,
 		startTimes,
 		timing
 	} from '#lib/domain/lessonView.ts';
@@ -139,7 +141,7 @@
 		</section>
 	</div>
 
-	<aside class="margin" aria-label="Syllabus, feedback and resources">
+	<aside class="margin" aria-label="Syllabus, feedback, resources and references">
 		<section>
 			<h2>Syllabus</h2>
 			{#if lesson.curriculum_links.length}
@@ -168,11 +170,13 @@
 				<h2>Resources</h2>
 				<ul class="res">
 					{#each lesson.resources as r, i (i)}
+						{@const host = r.url ? linkHost(r.url) : null}
 						<li>
 							<Icon name={r.url ? 'link' : 'file'} size={16} />
 							<div>
-								{#if r.url}<a href={r.url} target="_blank" rel="noreferrer">{r.name}</a
+								{#if host}<a href={r.url} target="_blank" rel="noreferrer">{r.name}</a
 									>{:else}<strong>{r.name}</strong>{/if}
+								{#if r.url && !host}<span class="where">{r.url}</span>{/if}
 								{#if r.canvas || r.file}
 									<span class="where">
 										{#if r.canvas}Canvas: {r.canvas}{/if}
@@ -180,6 +184,34 @@
 									</span>
 								{/if}
 								{#if r.notes}<span class="rnote">{r.notes}</span>{/if}
+							</div>
+						</li>
+					{/each}
+				</ul>
+			</section>
+		{/if}
+
+		{#if lesson.references?.length}
+			<section>
+				<h2>References</h2>
+				<ul class="res">
+					{#each lesson.references as r, i (i)}
+						{@const host = r.url ? linkHost(r.url) : null}
+						<li>
+							<Icon name={r.url ? 'link' : 'file'} size={16} />
+							<div>
+								<span
+									>{#each citationParts(r.citation) as part, j (j)}{#if part.italic}<i
+												>{part.text}</i
+											>{:else}{part.text}{/if}{/each}</span
+								>
+								{#if host}
+									<a class="where" href={r.url} target="_blank" rel="noreferrer">{host}</a>
+								{:else if r.url}
+									<span class="where">{r.url}</span>
+								{/if}
+								{#if r.path}<span class="where">File: {r.path}</span>{/if}
+								<span class="rnote">{r.used_for}</span>
 							</div>
 						</li>
 					{/each}
