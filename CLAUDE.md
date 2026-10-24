@@ -41,6 +41,7 @@ src/lib/domain/   plain TypeScript, no Svelte, unit-tested
   deliveries.ts   delivery records: what a class was taught, and its feedback
   versions.ts     a lesson's history: each distinct plan classes were taught
   planDiff.ts     what changed between two versions of a plan, field by field
+  materials.ts    links to what a class saw, and where the plan's outputs land
   offeringEdit.ts withColour(), and the class editor's toClassDraft / fromClassDraft
   newOffering.ts  copyOffering / blankOffering: a new class, and its id and path
   newLesson.ts    a new plan: its file name, and the unit's index
