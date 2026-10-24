@@ -102,5 +102,7 @@ export interface Offering {
 	mode?: string;
 	subject: string;
 	units: OfferingUnit[];
+	/** The class's folder in cloud storage, an `https:` link. */
+	folder?: string;
 	[key: string]: unknown;
 }

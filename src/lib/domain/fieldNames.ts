@@ -121,6 +121,7 @@ const SCHEMAS: Record<string, Field> = {
 				term: text('Term'),
 				notes: text('Notes')
 			}),
+			folder: text('Class folder'),
 			differentiation
 		}
 	},

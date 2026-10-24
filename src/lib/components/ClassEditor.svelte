@@ -1,12 +1,13 @@
 <script lang="ts">
 	// How a class runs: its units in order, each unit's term, dates, weeks,
-	// notes and lesson list, its one-off lessons, its mode and cohort. The
-	// class's name, colour and Canvas links are not edited here.
+	// notes and lesson list, its one-off lessons, its mode, cohort and folder.
+	// The class's name, colour and Canvas links are not edited here.
 	import { beforeNavigate, goto } from '$app/navigation';
 	import Icon from './Icon.svelte';
 	import PageHead from './PageHead.svelte';
 	import type { UnitEntry } from '#lib/data.ts';
 	import { move } from '#lib/domain/lessonEdit.ts';
+	import { httpsHost } from '#lib/domain/materials.ts';
 	import {
 		MODES,
 		fromClassDraft,
@@ -484,6 +485,26 @@
 				></textarea>
 			</label>
 			<p class="hint">Nothing that identifies a student.</p>
+			<label class="field folder">
+				<span>Class folder (optional)</span>
+				<input
+					type="url"
+					bind:value={draft.folder}
+					placeholder="https://"
+					autocomplete="off"
+					spellcheck="false"
+				/>
+			</label>
+			{#if draft.folder.trim()}
+				{@const host = httpsHost(draft.folder.trim())}
+				<p class="hint" class:bad={!host}>
+					{host ? `Opens ${host}` : 'Only a web address starting https:// can be saved.'}
+				</p>
+			{/if}
+			<p class="hint">
+				Where the decks, workbooks and handouts this class saw are kept, in your school’s cloud
+				storage. Use a school-wide sharing link to a shared drive, so colleagues can open it.
+			</p>
 		</section>
 
 		<div class="dock">
@@ -515,6 +536,10 @@
 
 	h2 {
 		margin: 0 0 4px;
+	}
+
+	.folder input {
+		width: 100%;
 	}
 
 	.hint {

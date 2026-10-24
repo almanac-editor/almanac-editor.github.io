@@ -345,6 +345,7 @@
 								offering={offering?.id ?? null}
 								{mine}
 								names={classNames}
+								folder={offering?.folder ?? null}
 								onedit={myRecord
 									? (i) => {
 											linkingAt = i;

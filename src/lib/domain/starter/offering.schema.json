@@ -11,6 +11,7 @@
 		"class_label": { "type": "string" },
 		"colour": { "type": "string" },
 		"subject": { "type": "string", "minLength": 1 },
+		"folder": { "type": "string" },
 		"units": {
 			"type": "array",
 			"items": {
