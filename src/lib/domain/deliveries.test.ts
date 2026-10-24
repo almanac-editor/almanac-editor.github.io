@@ -15,6 +15,8 @@ import {
 	type DeliveryRecord
 } from './deliveries.ts';
 import { dump } from './format.ts';
+import { timing } from './lessonView.ts';
+import { comparePlans, planChanged } from './planDiff.ts';
 import { ConflictError, Repo } from './repo.ts';
 import type { Lesson, Offering } from './types.ts';
 
@@ -41,10 +43,14 @@ const input = (more = {}) => ({
 });
 
 describe('paths', () => {
-	it('splits a lesson path at its last units/', () => {
+	it('splits a lesson path at its last units/ or revision/', () => {
 		expect(lessonRef('subjects/ec/hsc/units/a/lessons/01.json')).toEqual({
 			subject: 'subjects/ec/hsc',
 			ref: 'units/a/lessons/01.json'
+		});
+		expect(lessonRef('subjects/ct/revision/final/lessons/01.json')).toEqual({
+			subject: 'subjects/ct',
+			ref: 'revision/final/lessons/01.json'
 		});
 		expect(lessonRef('subjects/x/lessons/01.json')).toBeNull();
 	});
@@ -242,6 +248,25 @@ describe('Data, against the sample repo', () => {
 			'subjects/design_tech/units/product_design/lessons/04_cardboard_prototypes.json'
 		);
 		expect(other.map((h) => [h.offeringPath, h.record.offering])).toEqual([[null, null]]);
+	});
+
+	it('shows last year’s class a plan that has changed since, and this year’s the plan as it stands', async () => {
+		const d = data();
+		const [lastYear, thisYear] = await d.deliveries(lessonPath);
+		const { doc } = await d.lesson(lessonPath);
+		const before = lastYear.record.deliveries[0].plan as Lesson;
+		const diff = comparePlans(before, doc);
+		expect(diff.changed).toBe(true);
+		expect(diff.sections.map((r) => r.status)).toEqual([
+			'changed',
+			'added',
+			'changed',
+			'changed',
+			'added',
+			'same'
+		]);
+		expect(timing(before).total).toBe(65);
+		expect(planChanged(thisYear.record.deliveries[0].plan as Lesson, doc)).toBe(false);
 	});
 
 	it('skips a class that teaches another subject', async () => {

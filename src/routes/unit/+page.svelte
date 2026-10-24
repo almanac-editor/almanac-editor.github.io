@@ -6,6 +6,7 @@
 	import Lane from '#lib/components/Lane.svelte';
 	import PageHead from '#lib/components/PageHead.svelte';
 	import { formatDate } from '#lib/domain/deliveries.ts';
+	import { planChanged } from '#lib/domain/planDiff.ts';
 	import { timing } from '#lib/domain/lessonView.ts';
 	import { lessonRefs, offeringEntries } from '#lib/domain/offerings.ts';
 	import { join } from '#lib/domain/paths.ts';
@@ -49,9 +50,10 @@
 	});
 
 	/**
-	 * Per lesson: open feedback from every class's records, and when this class
-	 * last had it. Read after the lessons, only for the lessons shown, so the
-	 * list never waits on them.
+	 * Per lesson: open feedback from every class's records, when this class
+	 * last had it, the plan it had then, and whether the plan has changed
+	 * since. Read after the lessons, only for the lessons shown, so the list
+	 * never waits on them.
 	 */
 	const marks = $derived.by(() => {
 		const data = session.data;
@@ -59,22 +61,35 @@
 		if (!data || !pending) return null;
 		return pending.then(({ lessons }) =>
 			Promise.all(
-				lessons.map(async ({ ref }) => {
+				lessons.map(async ({ ref, lesson }) => {
 					const held = await data.deliveries(join(u, ref)).catch(() => []);
 					const open = held
 						.flatMap((h) => h.record.deliveries)
 						.flatMap((d) => d.feedback ?? [])
 						.filter((f) => f.status === 'open').length;
+					const mine = held.find((h) => o && h.offeringPath === o)?.record.deliveries ?? [];
 					const taught =
-						held
-							.find((h) => o && h.offeringPath === o)
-							?.record.deliveries.map((d) => d.taught)
+						mine
+							.map((d) => d.taught)
 							.filter(Boolean)
 							.at(-1) ?? null;
-					return [ref, { open, taught }] as const;
+					const plan = mine.findLast((d) => d.plan)?.plan ?? null;
+					const changed = !!(lesson && plan && planChanged(plan, lesson));
+					return [ref, { open, taught, plan, changed }] as const;
 				})
 			).then((rows) => new Map(rows))
 		);
+	});
+	type Marks = Awaited<NonNullable<typeof marks>>;
+	let found = $state.raw<Marks | null>(null);
+	$effect(() => {
+		const pending = marks;
+		found = null;
+		pending
+			?.then((m) => {
+				if (marks === pending) found = m;
+			})
+			.catch(() => {});
 	});
 
 	function onkeydown(event: KeyboardEvent) {
@@ -152,13 +167,16 @@
 				{#each lessons as { ref, lesson }, i (ref)}
 					<li>
 						{#if lesson}
-							{@const tm = timing(lesson)}
+							{@const mark = found?.get(ref)}
+							<!-- In a class's context, a lesson the class has had shows as it had it. -->
+							{@const plan = mark?.plan ?? lesson}
+							{@const tm = timing(plan)}
 							<a href={links.lesson(u, ref, o, t)} class="lane-row">
 								<span class="num">{String(i + 1).padStart(2, '0')}</span>
 								<span class="what">
-									<span class="title">{lesson.title}</span>
+									<span class="title">{plan.title}</span>
 									<span class="sub">
-										{lesson.duration_minutes} min · {tm.talk} talk · {tm.activity} activity
+										{plan.duration_minutes} min · {tm.talk} talk · {tm.activity} activity
 										{#if tm.nominal && tm.total !== tm.nominal}
 											<strong class="off">
 												· {tm.total > tm.nominal
@@ -166,23 +184,19 @@
 													: `${tm.nominal - tm.total} min spare`}
 											</strong>
 										{/if}
-										{#await marks then found}
-											{@const mark = found?.get(ref)}
-											{#if mark?.taught}
-												<span class="taught">· Taught {formatDate(mark.taught)}</span>
-											{/if}
-											{#if mark?.open}
-												<span class="fb">· {mark.open} feedback</span>
-											{/if}
-										{/await}
+										{#if mark?.taught}
+											<span class="taught">· Taught {formatDate(mark.taught)}</span>
+										{/if}
+										{#if mark?.changed}
+											<span class="taught">· Plan changed since</span>
+										{/if}
+										{#if mark?.open}
+											<span class="fb">· {mark.open} feedback</span>
+										{/if}
 									</span>
 								</span>
 								<span class="bar"
-									><Lane
-										sections={lesson.sections}
-										nominal={lesson.duration_minutes}
-										compact
-									/></span
+									><Lane sections={plan.sections} nominal={plan.duration_minutes} compact /></span
 								>
 							</a>
 						{:else}

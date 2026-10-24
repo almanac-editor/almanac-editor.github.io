@@ -78,17 +78,20 @@ const FEEDBACK_ORDER = [
 
 export const UNATTRIBUTED_SUFFIX = '_unattributed';
 
+/** Directories that hold units, as `UNIT_ROOTS` in `deliveries.py`. */
+const UNIT_ROOTS = ['units', 'revision'];
+
 /**
- * Splits a lesson path at its last `units/`: the subject directory, and the
- * lesson's path relative to it. The subject is whatever directory holds
- * `units/`, so a course level beneath a subject costs nothing. Null for a path
- * not under `units/`.
+ * Splits a lesson path at its last `units/` or `revision/`: the subject
+ * directory, and the lesson's path relative to it. The subject is whatever
+ * directory holds them, so a course level beneath a subject costs nothing.
+ * Null for a path under neither.
  *
  * `subjects/x/units/a/lessons/01.json` -> `{ subject: 'subjects/x', ref: 'units/a/lessons/01.json' }`
  */
 export function lessonRef(lessonPath: string): { subject: string; ref: string } | null {
 	const parts = lessonPath.split('/');
-	const at = parts.lastIndexOf('units');
+	const at = parts.findLastIndex((part) => UNIT_ROOTS.includes(part));
 	if (at === -1) return null;
 	return { subject: parts.slice(0, at).join('/'), ref: parts.slice(at).join('/') };
 }
