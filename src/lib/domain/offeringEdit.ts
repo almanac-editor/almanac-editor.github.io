@@ -3,8 +3,8 @@
  *
  * `withColour` sets the one field the home page's picker writes. `toClassDraft` and
  * `fromClassDraft` are the class editor's: the units it takes and their order, each
- * unit's term, dates, weeks, notes and lesson list, the one-offs, the mode and
- * the cohort. As with lessons:
+ * unit's term, dates, weeks, notes and lesson list, the one-offs, the mode, the
+ * cohort and the class's folder. As with lessons:
  *
  * - Keys keep the order the file had; a new key goes in at its schema place.
  * - An optional field cleared to empty is removed, unless the file already
@@ -16,7 +16,8 @@
  */
 
 import { normaliseText } from './format.ts';
-import { keysOf, ordered, setField } from './lessonEdit.ts';
+import { EditError, keysOf, ordered, setField } from './lessonEdit.ts';
+import { httpsHost } from './materials.ts';
 import type { Offering, OfferingUnit } from './types.ts';
 
 /** Schema order, for placing a key the file did not have. */
@@ -32,6 +33,7 @@ export const OFFERING_ORDER = [
 	'units',
 	'one_offs',
 	'canvas',
+	'folder',
 	'differentiation'
 ];
 const ENTRY_ORDER = [
@@ -70,6 +72,8 @@ export interface OfferingDraft {
 	cohort: { size: number | null; notes: string };
 	units: EntryDraft[];
 	one_offs: OneOffDraft[];
+	/** The class's folder in cloud storage, an `https:` link; empty for none. */
+	folder: string;
 }
 
 /** The offering with `colour` set, or removed when `colour` is null. */
@@ -105,7 +109,8 @@ export function toClassDraft(offering: Offering): OfferingDraft {
 			term: str(o.term),
 			notes: str(o.notes),
 			__from: structuredClone(o)
-		}))
+		})),
+		folder: str(offering.folder)
 	};
 }
 
@@ -144,6 +149,11 @@ export function fromClassDraft(original: Offering, draft: OfferingDraft): Offeri
 
 	out.units = draft.units.map(entryFrom);
 	setField(out, original, 'one_offs', draft.one_offs.map(oneOffFrom), true);
+	const folder = draft.folder.trim();
+	if (folder && !httpsHost(folder)) {
+		throw new EditError('The class folder must be a web address starting https://.');
+	}
+	setField(out, original, 'folder', folder, true);
 
 	return ordered(out, Object.keys(original), OFFERING_ORDER) as Offering;
 }

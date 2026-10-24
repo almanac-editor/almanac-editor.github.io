@@ -471,7 +471,8 @@ const offerings: Record<string, Offering> = {
 		units: [
 			{ unit: 'units/product_design', term: 'Term 1' },
 			{ unit: 'units/simple_circuits', term: 'Term 2' }
-		]
+		],
+		folder: 'https://drive.example.com/design-tech/2026-y7-class-a'
 	},
 	'offerings/2026_y08_class_b.json': {
 		id: '2026-y8-class-b',

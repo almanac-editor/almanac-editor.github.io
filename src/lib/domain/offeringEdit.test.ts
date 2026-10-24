@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import { byNumber, houseMap, termParts } from '../house.ts';
 import { dump } from './format.ts';
 import { oneOffDirs } from './layout.ts';
+import { EditError } from './lessonEdit.ts';
 import { fromClassDraft, newEntry, newOneOff, toClassDraft, withColour } from './offeringEdit.ts';
 import type { Offering } from './types.ts';
 
@@ -75,6 +76,24 @@ describe('class editing', () => {
 		expect(next.units[1]).toEqual({ unit: 'units/other_unit', end_date: '2030-06-20' });
 		expect('cohort' in next).toBe(false);
 		expect('mode' in next).toBe(false);
+	});
+
+	it('sets the class folder after canvas, and removes it when cleared', () => {
+		const original = { ...offering(), canvas: { course_id: '1' }, differentiation: {} };
+		const draft = toClassDraft(original);
+		draft.folder = ' https://school.example.com/sites/y7a ';
+		const saved = fromClassDraft(original, draft);
+		expect(saved.folder).toBe('https://school.example.com/sites/y7a');
+		expect(Object.keys(saved).slice(-3)).toEqual(['canvas', 'folder', 'differentiation']);
+		const cleared = toClassDraft(saved);
+		cleared.folder = '';
+		expect(dump(fromClassDraft(saved, cleared))).toBe(dump(original));
+	});
+
+	it('refuses a class folder that is not an https link', () => {
+		const draft = toClassDraft(offering());
+		draft.folder = 'C:\\Users\\Teacher\\OneDrive\\Year 7';
+		expect(() => fromClassDraft(offering(), draft)).toThrow(EditError);
 	});
 
 	it('puts new keys at their schema place', () => {

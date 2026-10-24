@@ -15,6 +15,7 @@
 		offering,
 		mine,
 		names,
+		folder,
 		onedit
 	}: {
 		/** The current plan, whose derived `materials` says where outputs land. */
@@ -26,6 +27,8 @@
 		mine: Delivery[];
 		/** Class names by offering id, for outputs listed for every class. */
 		names: Map<string, string>;
+		/** The page's class's folder in cloud storage, from its offering; null for none. */
+		folder: string | null;
 		/** Opens the links of one delivery for editing; null where there is none to edit. */
 		onedit: ((delivery: number) => void) | null;
 	} = $props();
@@ -33,11 +36,23 @@
 	const linked = $derived(mine.flatMap((d, i) => (d.materials?.length ? [{ d, i }] : [])));
 	const files = $derived(lessonOutputs(lesson, lessonPath, offering));
 	const shown = $derived(files.outputs.length > 0 || files.sources.length > 0);
+	const folderHost = $derived(folder ? httpsHost(folder) : null);
 </script>
 
-{#if linked.length || shown || onedit}
+{#if linked.length || shown || onedit || folderHost}
 	<section>
 		<h2>Materials</h2>
+		{#if folderHost}
+			<ul class="res folder">
+				<li>
+					<Icon name="book" size={16} />
+					<div>
+						<a href={folder} target="_blank" rel="noreferrer">Class folder</a>
+						<span class="where">{folderHost}</span>
+					</div>
+				</li>
+			</ul>
+		{/if}
 		{#each linked as { d, i } (i)}
 			{#if mine.length > 1}<h3>{d.taught ? formatDate(d.taught) : `Time ${i + 1}`}</h3>{/if}
 			<ul class="res">
@@ -129,6 +144,10 @@
 		display: grid;
 		gap: 2px;
 		min-width: 0;
+	}
+
+	.folder {
+		margin-bottom: 12px;
 	}
 
 	.where {
