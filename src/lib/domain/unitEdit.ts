@@ -80,7 +80,9 @@ export function fromUnitDraft(original: Unit, draft: UnitDraft, linked: Set<stri
 	if (description || Object.prototype.hasOwnProperty.call(original, 'description')) {
 		out.description = description;
 	}
-	out.syllabus_registry = points;
+	const hadRegistry = Object.prototype.hasOwnProperty.call(original, 'syllabus_registry');
+	if (points.length || hadRegistry) out.syllabus_registry = points;
+	else delete out.syllabus_registry;
 	const outcomes = [...new Set(draft.applicable_outcomes)];
 	const had = Object.prototype.hasOwnProperty.call(original, 'applicable_outcomes');
 	if (outcomes.length || had) out.applicable_outcomes = outcomes;

@@ -82,6 +82,14 @@ describe('fromUnitDraft', () => {
 		expect(() => fromUnitDraft(u, draft, new Set())).toThrow(/SK-C02 is listed twice/);
 	});
 
+	it('adds no dot points to a unit that has none', () => {
+		const u = unit();
+		delete u.syllabus_registry;
+		const saved = fromUnitDraft(u, toUnitDraft(u), new Set());
+		expect('syllabus_registry' in saved).toBe(false);
+		expect(dump(saved)).toBe(dump(u));
+	});
+
 	it('adds applicable outcomes at their schema place, and leaves them out when none', () => {
 		const u = unit();
 		const draft = toUnitDraft(u);

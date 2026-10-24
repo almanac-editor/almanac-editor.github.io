@@ -47,6 +47,7 @@ describe.skipIf(!root)('real data repo', () => {
 		.filter((f) => f.endsWith('.json'))
 		.map((f) => relative(repo, f).replaceAll('\\', '/'));
 	const read = (rel: string) => readFileSync(joinFs(repo, rel), 'utf-8');
+	const units = files.filter((f) => f.endsWith('/unit.json'));
 	const lessons = files.filter((f) => /^subjects\/.*\/lessons\/.*\.json$/.test(f));
 	const records = files.filter((f) => /^offerings\/[^/]+\/taught\//.test(f));
 	const offerings = files.filter((f) => /^offerings\/[^/]+\.json$/.test(f));
@@ -59,9 +60,11 @@ describe.skipIf(!root)('real data repo', () => {
 	);
 
 	it('round-trips every file the editor can write through dump', () => {
+		// The editor writes units, lessons, offerings and delivery records; other
+		// JSON under subjects/ (question banks, taxonomies) belongs to other tools.
 		// outcome.json is skipped: one lacks its final newline, which an edit in
 		// the app adds. Its untouched-draft test compares with the house format.
-		const writable = files.filter((f) => !f.endsWith('/outcome.json'));
+		const writable = [...units, ...lessons, ...offerings, ...records];
 		const changed = writable.filter((f) => dump(JSON.parse(read(f))) !== read(f));
 		expect(changed).toEqual([]);
 	});
@@ -75,7 +78,6 @@ describe.skipIf(!root)('real data repo', () => {
 	});
 
 	it('adds a new plan to every unit by changing only its lessons list', () => {
-		const units = files.filter((f) => f.endsWith('/unit.json'));
 		const wrong = units.flatMap((f) => {
 			const dir = f.slice(0, -'/unit.json'.length);
 			const unit: Unit = JSON.parse(read(f));
@@ -109,7 +111,6 @@ describe.skipIf(!root)('real data repo', () => {
 	it('finds every unit, lesson, class and outcome set valid against the starter schemas', () => {
 		// The starter schemas must never be stricter than a real repo's own.
 		const starter = new Schemas(STARTER_SCHEMAS);
-		const units = files.filter((f) => f.endsWith('/unit.json'));
 		const invalid = [
 			...lessons.map((f) => [f, 'lesson.schema.json'] as const),
 			...units.map((f) => [f, 'unit.schema.json'] as const),
@@ -259,7 +260,6 @@ print(json.dumps(out))
 	});
 
 	it('saves every unit’s untouched tasks as the same bytes', () => {
-		const units = files.filter((f) => f.endsWith('/unit.json'));
 		const changed = units.filter((f) => {
 			const unit: Unit = JSON.parse(read(f));
 			return dump(fromTaskDrafts(unit, toTaskDrafts(unit))) !== read(f);

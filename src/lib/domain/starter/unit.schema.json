@@ -3,7 +3,7 @@
 	"title": "Unit",
 	"description": "Almanac's starter schema: the shape every unit needs. Replace or extend it to suit your school.",
 	"type": "object",
-	"required": ["unit_title", "subject", "description", "syllabus_registry", "lessons"],
+	"required": ["unit_title", "subject", "description", "lessons"],
 	"properties": {
 		"unit_title": {
 			"type": "string",
