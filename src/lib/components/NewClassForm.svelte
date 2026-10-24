@@ -5,6 +5,7 @@
 	import Icon from './Icon.svelte';
 	import PageHead from './PageHead.svelte';
 	import type { UnitEntry } from '#lib/data.ts';
+	import type { ToKeep } from '#lib/domain/deliveries.ts';
 	import {
 		blankOffering,
 		copyOffering,
@@ -108,6 +109,49 @@
 		draft ? (houseMap([...offerings, [path, draft]]).get(path) ?? 'none') : 'none'
 	);
 
+	// The plans earlier classes would lose once this class exists, read as the draft settles.
+	let keep = $state.raw<ToKeep[] | null>(null);
+	let keepError = $state<string | null>(null);
+	// Units an earlier class has not finished, left out by the teacher: `offering path|unit`.
+	let leftOut = $state<string[]>([]);
+	const keyOf = (k: Pick<ToKeep, 'offeringPath' | 'unit'>) => `${k.offeringPath}|${k.unit}`;
+	const shape = $derived(
+		draft ? JSON.stringify([draft.year, draft.subject, draft.units, draft.one_offs ?? []]) : null
+	);
+	$effect(() => {
+		const data = session.data;
+		const at = shape;
+		const doc = draft;
+		keep = null;
+		keepError = null;
+		if (!data || !at || !doc) return;
+		let current = true;
+		const timer = setTimeout(() => {
+			data
+				.plansToKeep($state.snapshot(doc) as Offering)
+				.then((found) => current && (keep = found))
+				.catch((error) => current && (keepError = (error as Error).message));
+		}, 250);
+		return () => {
+			current = false;
+			clearTimeout(timer);
+		};
+	});
+	/** The plans to keep, by earlier class, then by unit. */
+	const keepGroups = $derived.by(() => {
+		const all = keep ?? [];
+		return [...new Set(all.map((k) => k.offeringPath))].map((path) => {
+			const items = all.filter((k) => k.offeringPath === path);
+			const units = [...new Set(items.map((k) => k.unit))].map(
+				(unit) => [unit, items.filter((k) => k.unit === unit)] as const
+			);
+			return [path, { offering: items[0].offering, units }] as const;
+		});
+	});
+	const keeping = $derived(
+		(keep ?? []).filter((k) => k.outcome !== 'several' && !leftOut.includes(keyOf(k)))
+	);
+
 	const unitTitle = (dir: string) =>
 		units.find((u) => u.dir === dir)?.unit.unit_title ?? humanise(dir.split('/').pop() ?? dir);
 
@@ -118,7 +162,7 @@
 		saving = true;
 		problem = null;
 		try {
-			await data.createOffering($state.snapshot(draft) as Offering);
+			await data.createOffering($state.snapshot(draft) as Offering, keeping);
 			session.showYear(String(year));
 			session.revision += 1;
 			await goto(links.home());
@@ -225,10 +269,70 @@
 				{#if idProblem}{idProblem}{:else}Saved as <code>{path}</code>.{/if}
 			</p>
 
+			{#if keepGroups.length}
+				<section class="keep" aria-labelledby="keep-h">
+					<h2 id="keep-h">Plans kept for earlier classes</h2>
+					<p class="hint">
+						Earlier classes took some of this class’s lessons without their plan being kept.
+						Creating the class keeps {keep?.length === 1 ? 'that plan' : 'those plans'} in each class’s
+						record, so editing for {year} does not lose what those classes had. Untick a unit an earlier
+						class has not finished.
+					</p>
+					{#each keepGroups as [offeringPath, { offering: earlier, units: byUnit }] (offeringPath)}
+						<fieldset class="earlier">
+							<legend>{className(earlier)} <span class="muted">{earlier.id}</span></legend>
+							{#each byUnit as [unit, items] (unit)}
+								{@const kept = items.filter((k) => k.outcome !== 'several')}
+								{@const left = items.length - kept.length}
+								{@const key = keyOf({ offeringPath, unit })}
+								{#if kept.length}
+									<label class="check">
+										<input
+											type="checkbox"
+											checked={!leftOut.includes(key)}
+											onchange={() =>
+												(leftOut = leftOut.includes(key)
+													? leftOut.filter((x) => x !== key)
+													: [...leftOut, key])}
+										/>
+										<span
+											>{unit.startsWith('one_offs/')
+												? humanise(unit.split('/').pop() ?? unit)
+												: unitTitle(join(earlier.subject, unit))}</span
+										>
+										<span class="count">{kept.length} lesson{kept.length === 1 ? '' : 's'}</span>
+									</label>
+								{/if}
+								{#if left}
+									<p class="left">
+										{left} lesson{left === 1 ? '' : 's'} in {unitTitle(join(earlier.subject, unit))}
+										{left === 1 ? 'was' : 'were'} taught more than once with no plan kept, so
+										{left === 1 ? 'it is' : 'they are'} left as {left === 1 ? 'it is' : 'they are'}.
+									</p>
+								{/if}
+							{/each}
+						</fieldset>
+					{/each}
+					<p class="hint">
+						{session.source === 'folder'
+							? 'In a folder there are no commits: the class and the kept plans are written one after another.'
+							: `The class and ${keeping.length} kept plan${keeping.length === 1 ? '' : 's'} are saved as one commit.`}
+					</p>
+				</section>
+			{:else if keepError}
+				<div class="msg warn">
+					<div>Could not check earlier classes’ plans. {keepError}</div>
+				</div>
+			{/if}
+
 			{#if problem}<div class="msg warn"><div>{problem}</div></div>{/if}
 
 			<div class="actions">
-				<button class="primary create" type="submit" disabled={!draft || !!idProblem || saving}>
+				<button
+					class="primary create"
+					type="submit"
+					disabled={!draft || !!idProblem || saving || (draft && keep === null && !keepError)}
+				>
 					<Icon name="plus" size={16} />
 					{saving ? 'Creating…' : 'Create class'}
 				</button>
@@ -293,6 +397,53 @@
 		display: grid;
 		grid-template-columns: 110px minmax(0, 1fr) minmax(0, 1fr);
 		gap: 0 12px;
+	}
+
+	.keep {
+		margin: 8px 0 20px;
+	}
+
+	.keep h2 {
+		font-size: 17px;
+		font-stretch: 90%;
+		margin-bottom: 6px;
+	}
+
+	.keep .hint {
+		margin: 0 0 10px;
+		font-size: 13px;
+		color: var(--ink-2);
+	}
+
+	.earlier {
+		border: 0;
+		border-top: 1px solid var(--rule);
+		margin: 0;
+		padding: 10px 0;
+	}
+
+	.earlier legend {
+		font-weight: 700;
+		font-size: 14px;
+		padding: 0;
+	}
+
+	.earlier .check {
+		display: flex;
+		gap: 8px;
+		align-items: baseline;
+		margin-top: 6px;
+	}
+
+	.count {
+		font-size: 13px;
+		color: var(--muted);
+	}
+
+	.left {
+		margin: 6px 0 0 24px;
+		font-size: 13px;
+		color: var(--muted);
 	}
 
 	.kept {

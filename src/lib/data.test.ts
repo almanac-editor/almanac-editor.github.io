@@ -4,7 +4,7 @@ import { dump } from './domain/format.ts';
 import { blankLesson } from './domain/newLesson.ts';
 import { blankUnit } from './domain/newUnit.ts';
 import { ConflictError, NotFoundError, type Loaded } from './domain/repo.ts';
-import type { Store } from './domain/store.ts';
+import type { Store, Write } from './domain/store.ts';
 import type { Lesson, Offering, Unit } from './domain/types.ts';
 
 const UNIT = 'subjects/sorting/units/sorting_things';
@@ -56,6 +56,17 @@ class MemoryStore implements Store {
 		this.files.set(path, dump(doc));
 		this.writes.push(path);
 		return dump(doc);
+	}
+	async writeMany(files: Write[]) {
+		for (const f of files) {
+			if (f.sha === null ? this.files.has(f.path) : this.files.get(f.path) !== f.sha) {
+				throw new ConflictError(`${f.path} changed`);
+			}
+		}
+		for (const f of files) {
+			this.files.set(f.path, dump(f.doc));
+			this.writes.push(f.path);
+		}
 	}
 	async head() {
 		return null;

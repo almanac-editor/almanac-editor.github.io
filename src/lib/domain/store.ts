@@ -13,6 +13,14 @@
 
 import type { Loaded } from './repo.ts';
 
+/** One file in a `writeMany`. */
+export interface Write {
+	path: string;
+	doc: unknown;
+	/** The version the app loaded, or null for a file that must not exist yet. */
+	sha: string | null;
+}
+
 export interface Store {
 	/** Every file path the app may read, mapped to a version id (may be empty). */
 	paths(): Promise<Map<string, string>>;
@@ -25,6 +33,12 @@ export interface Store {
 	writeJson(path: string, doc: unknown, sha: string, message: string): Promise<string>;
 	/** Writes a new file; refuses with ConflictError if one is already there. */
 	createJson(path: string, doc: unknown, message: string): Promise<string>;
+	/**
+	 * Writes several files together. Every file is checked first, and
+	 * ConflictError means none was written. On GitHub they are one commit; in
+	 * a folder, which has no commits, they are written one after another.
+	 */
+	writeMany(files: Write[], message: string): Promise<void>;
 	/** The commit the files are at, where they are in git through the store; else null. */
 	head(): Promise<string | null>;
 }

@@ -665,6 +665,10 @@ export function demoFetch(): typeof fetch {
 	// Commits are hex, as a delivery's plan_commit must be.
 	let commits = 0xa1b2c3d;
 	const head = () => commits.toString(16);
+	// Trees and commits made through the Git Data API, until the branch moves to one.
+	const trees = new Map<string, { path: string; content: string }[]>();
+	const made = new Map<string, { tree: string; parent: string }>();
+	let next_ = 0;
 	const json = (body: unknown, status = 200) =>
 		new Response(JSON.stringify(body), { status, headers: { 'Content-Type': 'application/json' } });
 
@@ -674,9 +678,37 @@ export function demoFetch(): typeof fetch {
 		if (path === '') return json({ full_name: 'sample/almanac' });
 		if (path.startsWith('/git/trees/')) {
 			return json({
+				sha: `tree-${head()}`,
 				truncated: false,
 				tree: [...shas].map(([p, sha]) => ({ path: p, sha, type: 'blob' }))
 			});
+		}
+		if (path === '/git/trees' && init?.method === 'POST') {
+			const body = JSON.parse(String(init.body)) as {
+				tree: { path: string; content: string }[];
+			};
+			const sha = `tree-new-${(next_ += 1)}`;
+			trees.set(sha, body.tree);
+			return json({ sha });
+		}
+		if (path === '/git/commits' && init?.method === 'POST') {
+			const body = JSON.parse(String(init.body)) as { tree: string; parents: string[] };
+			const sha = (0xf000000 + (next_ += 1)).toString(16);
+			made.set(sha, { tree: body.tree, parent: body.parents[0] });
+			return json({ sha });
+		}
+		if (path === '/git/refs/heads/main' && init?.method === 'PATCH') {
+			const body = JSON.parse(String(init.body)) as { sha: string };
+			const commit = made.get(body.sha);
+			if (!commit || commit.parent !== head()) {
+				return json({ message: 'Update is not a fast forward' }, 422);
+			}
+			for (const file of trees.get(commit.tree) ?? []) {
+				store.set(file.path, file.content);
+				shas.set(file.path, shaOf());
+			}
+			commits = parseInt(body.sha, 16);
+			return json({ object: { sha: body.sha } });
 		}
 		if (path === '/git/ref/heads/main') return json({ object: { sha: head() } });
 		if (path.startsWith('/git/blobs/')) {

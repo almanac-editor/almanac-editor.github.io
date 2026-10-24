@@ -21,7 +21,8 @@
 import { ordered } from './lessonEdit.ts';
 import { normaliseText } from './format.ts';
 import { materialsFrom, type MaterialDraft, type MaterialLink } from './materials.ts';
-import type { Lesson } from './types.ts';
+import { normalise } from './paths.ts';
+import type { Lesson, Offering } from './types.ts';
 
 export type FeedbackStatus = 'open' | 'applied' | 'declined';
 
@@ -181,6 +182,129 @@ export function snapshot(lesson: Lesson): Lesson {
 	const plan: Record<string, unknown> = structuredClone(lesson);
 	delete plan.materials;
 	return plan as Lesson;
+}
+
+/** One lesson a class takes: its ref relative to the subject, and the unit entry or one-off it comes from. */
+export interface TakenLesson {
+	ref: string;
+	unit: string;
+}
+
+/**
+ * Every lesson an offering takes, as `offering_lesson_refs` in `deliveries.py`
+ * lists them: a unit entry's own `lessons`, else the unit's; a one-off's plans
+ * under its `lessons/`, sorted. Repeats are dropped. `unitLessons(entry)` is
+ * the unit's own index, or null where the unit cannot be read; `listJson(dir)`
+ * is every `.json` under a directory, both relative to the subject.
+ */
+export function offeringLessons(
+	offering: Offering,
+	unitLessons: (unit: string) => string[] | null,
+	listJson: (dir: string) => string[]
+): TakenLesson[] {
+	const found: TakenLesson[] = [];
+	for (const entry of offering.units ?? []) {
+		const refs = entry.lessons ?? unitLessons(entry.unit) ?? [];
+		for (const ref of refs) found.push({ ref: `${entry.unit}/${ref}`, unit: entry.unit });
+	}
+	const oneOffs = Array.isArray(offering.one_offs) ? (offering.one_offs as { path: string }[]) : [];
+	for (const entry of oneOffs) {
+		for (const ref of [...listJson(`${entry.path}/lessons`)].sort()) {
+			found.push({ ref, unit: entry.path });
+		}
+	}
+	const seen = new Set<string>();
+	return found.filter(({ ref }) => !seen.has(ref) && !!seen.add(ref));
+}
+
+/**
+ * What keeping a plan would do to a class's record for a lesson, as
+ * `snapshot` in `deliveries.py` decides it: write a new record, add the plan
+ * to its one delivery, leave a record that has a plan, or leave one with
+ * several deliveries and none, since which run the plan belongs to is unknown.
+ */
+export type KeepOutcome = 'write' | 'add' | 'has' | 'several';
+
+export function keepOutcome(record: DeliveryRecord | null): KeepOutcome {
+	if (!record) return 'write';
+	if (record.deliveries.some((d) => d.plan)) return 'has';
+	return record.deliveries.length === 1 ? 'add' : 'several';
+}
+
+/** One earlier class's lesson whose plan a new class would put at risk. */
+export interface ToKeep {
+	offeringPath: string;
+	offering: Offering;
+	ref: string;
+	/** The unit entry or one-off the lesson comes from, so a whole unit can be left out. */
+	unit: string;
+	recordPath: string;
+	outcome: Exclude<KeepOutcome, 'has'>;
+}
+
+/**
+ * The plans to keep before `next` is created: every lesson an earlier year's
+ * class of the same subject took, that `next` takes too, and whose record has
+ * no plan. The rule of `missing_plans` in `deliveries.py`, for one new class:
+ * year, not history, decides it, so it holds before any lesson is edited.
+ * `records` holds the records that exist, by path.
+ */
+export function plansToKeep(
+	next: { offering: Offering; lessons: TakenLesson[] },
+	classes: { path: string; offering: Offering; lessons: TakenLesson[] }[],
+	records: Map<string, DeliveryRecord>
+): ToKeep[] {
+	const taken = new Set(next.lessons.map((l) => l.ref));
+	const subject = normalise(next.offering.subject ?? '');
+	const found: ToKeep[] = [];
+	for (const { path, offering, lessons } of classes) {
+		if (normalise(offering.subject ?? '') !== subject) continue;
+		if (!(offering.year < next.offering.year)) continue;
+		for (const { ref, unit } of lessons) {
+			if (!taken.has(ref)) continue;
+			const recordPath = deliveryPath(path, ref);
+			const outcome = keepOutcome(records.get(recordPath) ?? null);
+			if (outcome === 'has') continue;
+			found.push({ offeringPath: path, offering, ref, unit, recordPath, outcome });
+		}
+	}
+	return found;
+}
+
+/** The `source` a kept plan carries: who kept it, when, why, and from which commit. */
+export function keptStamp(date: string, forClass: string, commit: string | null): string {
+	return `plan kept by almanac-editor on ${date}, when ${forClass} was created${commit ? `, from ${commit.slice(0, 7)}` : ''}`;
+}
+
+/**
+ * The record with `plan` kept: a new record with one delivery, or the plan
+ * added to a record's one delivery, with `stamp` joined onto its `source`.
+ * A new key goes in at its schema place. Throws for a record that already has
+ * a plan or has several deliveries, which are left as they are.
+ */
+export function keepPlan(
+	record: DeliveryRecord | null,
+	offering: string,
+	ref: string,
+	plan: Lesson,
+	commit: string | null,
+	stamp: string
+): DeliveryRecord {
+	const kept: Delivery = { plan: snapshot(plan) };
+	if (commit) kept.plan_commit = commit;
+	const outcome = keepOutcome(record);
+	if (!record) {
+		const delivery = { ...kept, source: `${stamp}. Date and teacher not recorded.` };
+		return { offering, lesson: ref, deliveries: [ordered(delivery, undefined, DELIVERY_ORDER)] };
+	}
+	if (outcome !== 'add') throw new Error(`${ref}: the record is left as it is (${outcome}).`);
+	const [only] = record.deliveries;
+	const next: Delivery = {
+		...only,
+		...kept,
+		source: [only.source, stamp].filter(Boolean).join('; ')
+	};
+	return { ...record, deliveries: [ordered(next, Object.keys(only), DELIVERY_ORDER)] };
 }
 
 export interface TaughtInput {

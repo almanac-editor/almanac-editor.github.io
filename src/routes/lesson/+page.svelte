@@ -155,13 +155,19 @@
 		return shown > 0 ? shown - 1 : shown + 1;
 	}
 
-	const names = $derived(
-		new Map(
-			(held ?? []).flatMap((h) =>
-				h.offeringPath && h.offering ? [[h.offeringPath, className(h.offering)] as const] : []
-			)
-		)
-	);
+	// Class names by offering file; two classes with one name (Year 7 Class A in 2025 and 2026) also say their year.
+	const names = $derived.by(() => {
+		const classes = (held ?? []).flatMap((h) =>
+			h.offeringPath && h.offering ? [[h.offeringPath, h.offering] as const] : []
+		);
+		const shared = (name: string) => classes.filter(([, o]) => className(o) === name).length > 1;
+		return new Map(
+			classes.map(([path, o]) => {
+				const name = className(o);
+				return [path, shared(name) ? `${name} (${o.year})` : name] as const;
+			})
+		);
+	});
 
 	function commitHref(sha: string): string | null {
 		if (session.source !== 'github') return null;

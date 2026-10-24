@@ -5,11 +5,13 @@
  * tree lists every path with its blob sha, and blobs are fetched on demand and
  * cached by sha, which never changes for the same content. Writes go through
  * the Contents API with the blob sha the editor loaded, so GitHub refuses a
- * save over a file that changed since.
+ * save over a file that changed since. Several files saved together go
+ * through the Git Data API as one commit, and the branch only moves if
+ * nothing else moved it first.
  */
 
 import { dump, type Json } from './format.ts';
-import type { Store } from './store.ts';
+import type { Store, Write } from './store.ts';
 
 const API = 'https://api.github.com';
 
@@ -157,6 +159,60 @@ export class Repo implements Store {
 		);
 		const body: { object: { sha: string } } = await response.json();
 		return body.object.sha;
+	}
+
+	/**
+	 * One commit holding every file. Each is checked against the branch's
+	 * current tree first; the branch is then moved without force, so a commit
+	 * made elsewhere meanwhile refuses the whole save.
+	 */
+	async writeMany(files: Write[], message: string): Promise<void> {
+		const parent = await this.head();
+		const listing = await this.request(`${this.base}/git/trees/${parent}?recursive=1`);
+		const tree: { sha: string; tree: { path: string; sha: string }[]; truncated: boolean } =
+			await listing.json();
+		if (tree.truncated) {
+			throw new GitHubError('The repository is too large to list in one request.', 200);
+		}
+		const now = new Map(tree.tree.map((e) => [e.path, e.sha]));
+		for (const file of files) {
+			const at = now.get(file.path);
+			if (file.sha === null ? at !== undefined : at !== file.sha) {
+				throw new ConflictError(`${file.path} changed on GitHub since it was loaded.`);
+			}
+		}
+		const made = await this.request(`${this.base}/git/trees`, {
+			method: 'POST',
+			body: JSON.stringify({
+				base_tree: tree.sha,
+				tree: files.map((f) => ({
+					path: f.path,
+					mode: '100644',
+					type: 'blob',
+					content: dump(f.doc)
+				}))
+			})
+		});
+		const { sha: treeSha }: { sha: string } = await made.json();
+		const committed = await this.request(`${this.base}/git/commits`, {
+			method: 'POST',
+			body: JSON.stringify({ message, tree: treeSha, parents: [parent] })
+		});
+		const { sha: commit }: { sha: string } = await committed.json();
+		try {
+			await this.request(`${this.base}/git/refs/heads/${encodePath(this.target.branch)}`, {
+				method: 'PATCH',
+				body: JSON.stringify({ sha: commit, force: false })
+			});
+		} catch (error) {
+			if (error instanceof GitHubError && error.status === 422) {
+				throw new ConflictError(
+					`${this.target.branch} moved on GitHub while saving, so nothing was saved.`
+				);
+			}
+			throw error;
+		}
+		this.refresh();
 	}
 
 	private async put(path: string, doc: unknown, message: string, sha?: string): Promise<string> {
