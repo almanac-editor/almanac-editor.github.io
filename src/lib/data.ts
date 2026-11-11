@@ -7,6 +7,7 @@
 
 import type { Schema } from '@cfworker/json-schema';
 import {
+	classRecordPaths,
 	deliveryPath,
 	keepPlan,
 	keptStamp,
@@ -27,6 +28,8 @@ import {
 	type ToKeep
 } from './domain/deliveries.ts';
 import {
+	calendarPath,
+	calendarPaths,
 	contentPath,
 	offeringPaths,
 	oneOffDirs,
@@ -43,7 +46,7 @@ import { offeringPath } from './domain/newOffering.ts';
 import { byNumber } from './house.ts';
 import { ConflictError, type Loaded } from './domain/repo.ts';
 import type { Store, Write } from './domain/store.ts';
-import type { Lesson, Offering, Unit } from './domain/types.ts';
+import type { Lesson, Offering, SchoolCalendar, Unit } from './domain/types.ts';
 import type { OutcomeSet } from './domain/unitEdit.ts';
 import { describeProblems } from './domain/fieldNames.ts';
 import { Schemas, type Problem } from './domain/validate.ts';
@@ -67,6 +70,7 @@ export class Data {
 	private unitsPromise: Promise<UnitEntry[]> | null = null;
 	private offeringsPromise: Promise<[string, Offering][]> | null = null;
 	private schemasPromise: Promise<Schemas> | null = null;
+	private calendarsPromise: Promise<Map<string, Loaded<SchoolCalendar>>> | null = null;
 
 	constructor(readonly store: Store) {}
 
@@ -426,6 +430,53 @@ export class Data {
 			list.map(([p, o]) => [p, p === path ? doc : o] as [string, Offering])
 		);
 		return next;
+	}
+
+	/** The school calendars, `calendar/<year>.json`, by path, each with its version. */
+	calendars(): Promise<Map<string, Loaded<SchoolCalendar>>> {
+		this.calendarsPromise ??= this.store
+			.paths()
+			.then(
+				async (paths) =>
+					new Map(
+						await Promise.all(
+							calendarPaths(paths.keys()).map(
+								async (path) => [path, await this.store.readJson<SchoolCalendar>(path)] as const
+							)
+						)
+					)
+			);
+		return this.calendarsPromise;
+	}
+
+	/**
+	 * Saves a year's school calendar: over the version `sha` names, or as a
+	 * new file when `sha` is null. Returns the new version id. Throws
+	 * ConflictError if the file changed since it was read (or appeared
+	 * meanwhile), and an Error listing the problems if the schema refuses it.
+	 */
+	async saveCalendar(doc: SchoolCalendar, sha: string | null, message: string): Promise<string> {
+		await this.check('calendar.schema.json', doc);
+		const path = calendarPath(doc.year);
+		const next = sha
+			? await this.store.writeJson(path, doc, sha, message)
+			: await this.store.createJson(path, doc, message);
+		this.calendarsPromise = null;
+		return next;
+	}
+
+	/**
+	 * Every delivery record one class holds, read on demand for the one page
+	 * that shows the whole class's year (the calendar).
+	 */
+	async classDeliveries(offeringPath: string): Promise<{ path: string; record: DeliveryRecord }[]> {
+		const paths = classRecordPaths((await this.store.paths()).keys(), offeringPath);
+		return Promise.all(
+			paths.map(async (path) => ({
+				path,
+				record: (await this.store.readJson<DeliveryRecord>(path)).doc
+			}))
+		);
 	}
 
 	/** The subject's one-off lessons, as `one_offs/<name>` relative to the subject. */

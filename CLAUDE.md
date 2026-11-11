@@ -48,7 +48,9 @@ src/lib/domain/   plain TypeScript, no Svelte, unit-tested
   newUnit.ts      a new unit, and a new subject: where they go, what they hold
   unitEdit.ts     a unit's own fields and dot points; a subject's outcome.json
   tasks.ts        a unit's assessment tasks: which a class sat, and editing them
-  layout.ts       where units, offerings, schemas and content files are
+  schedule.ts     a class's calendar: term weeks, its periods, when each lesson falls
+  calendarEdit.ts the school calendar editor's draft (calendar/<year>.json)
+  layout.ts       where units, offerings, calendars, schemas and content files are
   validate.ts     the data repo's own schemas/*.schema.json, at run time
   starter.ts      starter schemas, written into a folder that starts empty
 src/lib/data.ts   per-sign-in cache over Repo
@@ -93,7 +95,13 @@ src/lib/components/, src/routes/   UI
 - **Feedback lives on delivery records**
   (`offerings/<class>/taught/<lesson path>.json`), never on the lesson. Items
   are applied or declined, never deleted. Read a lesson's records on demand,
-  never every record on every page.
+  never every record on every page. The one exception is a class's calendar
+  page, which reads that one class's records (`Data.classDeliveries`).
+- **Planned dates are worked out, never saved.** The school calendar
+  (`calendar/<year>.json`: periods, terms, days off) and an offering's
+  `timetable` give a class its periods; `schedule.ts` puts taught lessons on
+  their taught dates and plans the rest on from the last one. Nothing per
+  lesson is written. Neither file is read by the data repo's Python.
 
 ## Security
 
@@ -105,7 +113,9 @@ src/lib/components/, src/routes/   UI
 - **The CSP** (in `vite.config.ts`) limits `connect-src` to `api.github.com`.
   No third-party scripts at run time. Never `{@html}` on data.
 - **Dependencies:** pinned exactly (`save-exact=true` in `.npmrc`). Runtime
-  dependencies are Svelte and the validator only.
+  dependencies are Svelte, the validator and `@event-calendar/core` (the
+  calendar's month grid; MIT, depends on Svelte alone, bundled, so the CSP is
+  unchanged).
 - **The origin:** every Pages site on an account shares `<owner>.github.io`
   storage and folder access. The app is the only Pages site of the
   `almanac-editor` org (repo `almanac-editor/almanac-editor.github.io`,

@@ -1,0 +1,50 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"title": "School calendar",
+	"description": "Almanac's starter schema: one school year's terms, periods and days off, at calendar/<year>.json. With a class's timetable it says when the class has lessons. Replace or extend it to suit your school.",
+	"type": "object",
+	"required": ["year", "periods", "terms"],
+	"properties": {
+		"year": { "type": "integer", "minimum": 2000, "maximum": 2100 },
+		"periods": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["id"],
+				"properties": {
+					"id": { "type": "string", "minLength": 1 },
+					"name": { "type": "string" },
+					"start": { "type": "string", "pattern": "^[0-2][0-9]:[0-5][0-9]$" },
+					"end": { "type": "string", "pattern": "^[0-2][0-9]:[0-5][0-9]$" }
+				}
+			}
+		},
+		"terms": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["name", "start", "end"],
+				"properties": {
+					"name": { "type": "string", "minLength": 1 },
+					"start": { "type": "string", "format": "date" },
+					"end": { "type": "string", "format": "date" },
+					"first_week": { "enum": ["A", "B"] }
+				}
+			}
+		},
+		"days_off": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["title", "start"],
+				"properties": {
+					"title": { "type": "string", "minLength": 1 },
+					"start": { "type": "string", "format": "date" },
+					"end": { "type": "string", "format": "date" },
+					"periods": { "type": "array", "items": { "type": "string" } },
+					"year_groups": { "type": "array", "items": { "type": "string" } }
+				}
+			}
+		}
+	}
+}

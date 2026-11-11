@@ -28,6 +28,11 @@ export const links = {
 	newLesson: (u: string, o?: string | null, t?: string | null) =>
 		resolve('/new-lesson') + query({ u, o, t }),
 	unit: (u: string, o?: string | null, t?: string | null) => resolve('/unit') + query({ u, o, t }),
+	/** A class's calendar; `m` (`YYYY-MM`) is the month it opens on. */
+	calendar: (o: string, m?: string | null) => resolve('/calendar') + query({ o, m }),
+	/** A year's school calendar: terms, periods and days off. */
+	calendarEdit: (y: number | string, o?: string | null) =>
+		resolve('/calendar-edit') + query({ y: String(y), o }),
 	lesson: (u: string, l: string, o?: string | null, t?: string | null, edit = false) =>
 		resolve('/lesson') + query({ u, l, o, t, edit: edit ? '1' : null })
 };

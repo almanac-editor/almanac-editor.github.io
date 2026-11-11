@@ -4,7 +4,7 @@
  * `withColour` sets the one field the home page's picker writes. `toClassDraft` and
  * `fromClassDraft` are the class editor's: the units it takes and their order, each
  * unit's term, dates, weeks, notes and lesson list, the one-offs, the mode, the
- * cohort and the class's folder. As with lessons:
+ * cohort, the timetable and the class's folder. As with lessons:
  *
  * - Keys keep the order the file had; a new key goes in at its schema place.
  * - An optional field cleared to empty is removed, unless the file already
@@ -18,7 +18,7 @@
 import { normaliseText } from './format.ts';
 import { EditError, keysOf, ordered, setField } from './lessonEdit.ts';
 import { httpsHost } from './materials.ts';
-import type { Offering, OfferingUnit } from './types.ts';
+import type { Offering, OfferingUnit, TimetableSlot, Weekday } from './types.ts';
 
 /** Schema order, for placing a key the file did not have. */
 export const OFFERING_ORDER = [
@@ -30,6 +30,7 @@ export const OFFERING_ORDER = [
 	'mode',
 	'subject',
 	'cohort',
+	'timetable',
 	'units',
 	'one_offs',
 	'canvas',
@@ -47,6 +48,9 @@ const ENTRY_ORDER = [
 ];
 const ONE_OFF_ORDER = ['path', 'term', 'notes'];
 const COHORT_ORDER = ['size', 'notes'];
+const SLOT_ORDER = ['day', 'period', 'week'];
+
+export const WEEKDAYS: Weekday[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
 /** The schema's modes. A file holding another value keeps it. */
 export const MODES = ['standard', 'intensive', 'remote', 'mixed'] as const;
@@ -67,11 +71,15 @@ export type EntryDraft = {
 
 export type OneOffDraft = { path: string; term: string; notes: string } & From;
 
+/** A period the class has; `week` '' means every week. */
+export type SlotDraft = { day: Weekday; period: string; week: '' | 'A' | 'B' } & From;
+
 export interface OfferingDraft {
 	mode: string;
 	cohort: { size: number | null; notes: string };
 	units: EntryDraft[];
 	one_offs: OneOffDraft[];
+	timetable: SlotDraft[];
 	/** The class's folder in cloud storage, an `https:` link; empty for none. */
 	folder: string;
 }
@@ -110,8 +118,33 @@ export function toClassDraft(offering: Offering): OfferingDraft {
 			notes: str(o.notes),
 			__from: structuredClone(o)
 		})),
-		folder: str(offering.folder)
+		folder: str(offering.folder),
+		timetable: (Array.isArray(offering.timetable) ? offering.timetable : []).map((t) => ({
+			day: t.day,
+			period: str(t.period),
+			week: t.week === 'A' || t.week === 'B' ? t.week : '',
+			__from: structuredClone(t)
+		}))
 	};
+}
+
+/**
+ * The timetable with the class in `period` on `day` in `week` ('' every week),
+ * or not at all with null. Kept in day order, then the order `periods` lists.
+ */
+export function setSlot(
+	slots: SlotDraft[],
+	day: Weekday,
+	period: string,
+	week: '' | 'A' | 'B' | null,
+	periods: string[]
+): SlotDraft[] {
+	const rest = slots.filter((s) => !(s.day === day && s.period === period));
+	const had = slots.find((s) => s.day === day && s.period === period);
+	if (week !== null) rest.push({ ...had, day, period, week });
+	const rank = (s: SlotDraft) =>
+		WEEKDAYS.indexOf(s.day) * 1000 + (periods.includes(s.period) ? periods.indexOf(s.period) : 999);
+	return rest.sort((a, b) => rank(a) - rank(b));
 }
 
 /** A unit entry added in the editor, taking the unit's own list of lessons. */
@@ -154,6 +187,7 @@ export function fromClassDraft(original: Offering, draft: OfferingDraft): Offeri
 		throw new EditError('The class folder must be a web address starting https://.');
 	}
 	setField(out, original, 'folder', folder, true);
+	setField(out, original, 'timetable', draft.timetable.map(slotFrom), true);
 
 	return ordered(out, Object.keys(original), OFFERING_ORDER) as Offering;
 }
@@ -178,6 +212,15 @@ function oneOffFrom(d: OneOffDraft): Record<string, unknown> {
 	setField(item, from, 'term', text(d.term), true);
 	setField(item, from, 'notes', text(d.notes), true);
 	return ordered(item, keysOf(d.__from), ONE_OFF_ORDER);
+}
+
+function slotFrom(d: SlotDraft): TimetableSlot {
+	const from = d.__from ?? {};
+	const item: Record<string, unknown> = { ...from, day: d.day, period: d.period };
+	if (d.week) item.week = d.week;
+	// "Every week" keeps a file's own 'both', and adds nothing to a new slot.
+	else if (from.week !== 'both') delete item.week;
+	return ordered(item, keysOf(d.__from), SLOT_ORDER) as TimetableSlot;
 }
 
 function text(value: string | null | undefined): string {

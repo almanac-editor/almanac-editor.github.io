@@ -150,6 +150,7 @@ describe('Data.createUnit', () => {
 		expect(await data.units()).toEqual([]);
 		await data.createUnit('subjects/dt/units/products', blankUnit('Products', 'D&T', ''));
 		expect(store.writes).toEqual([
+			'schemas/calendar.schema.json',
 			'schemas/lesson.schema.json',
 			'schemas/offering.schema.json',
 			'schemas/outcome.schema.json',
@@ -244,5 +245,38 @@ describe('Data.oneOffs', () => {
 		const { store, data } = setup(false);
 		store.files.set('subjects/sorting/one_offs/first_day/README.md', '# First day\n');
 		expect(await data.oneOffs('subjects/sorting')).toEqual(['one_offs/first_day']);
+	});
+});
+
+describe('Data.calendars and classDeliveries', () => {
+	const cal = { year: 2030, periods: [{ id: 'P1' }], terms: [] };
+	const record = (lesson: string) =>
+		dump({ offering: '2030-y8', lesson, deliveries: [{ taught: '2030-02-04' }] });
+
+	it('reads only calendar/<year>.json files, and one class’s records', async () => {
+		const store = new MemoryStore(
+			new Map([
+				['calendar/2030.json', dump(cal)],
+				['calendar/notes.json', '{}'],
+				['offerings/2030_y8.json', '{}'],
+				['offerings/2030_y8/taught/units/a/lessons/01.json', record('units/a/lessons/01.json')],
+				['offerings/2030_y8/taught/units/a/lessons/01.md', ''],
+				['offerings/2030_y9/taught/units/a/lessons/01.json', record('units/a/lessons/01.json')]
+			])
+		);
+		const data = new Data(store);
+		expect([...(await data.calendars()).keys()]).toEqual(['calendar/2030.json']);
+		const held = await data.classDeliveries('offerings/2030_y8.json');
+		expect(held.map((h) => h.path)).toEqual(['offerings/2030_y8/taught/units/a/lessons/01.json']);
+		expect(held[0].record.deliveries[0].taught).toBe('2030-02-04');
+	});
+
+	it('creates a new year’s calendar, then saves over it', async () => {
+		const store = new MemoryStore(new Map());
+		const data = new Data(store);
+		const sha = await data.saveCalendar(cal, null, 'Add 2030 calendar');
+		await data.saveCalendar({ ...cal, terms: [] }, sha, 'Edit 2030 calendar');
+		expect(store.writes).toEqual(['calendar/2030.json', 'calendar/2030.json']);
+		await expect(data.saveCalendar(cal, null, 'again')).rejects.toBeInstanceOf(ConflictError);
 	});
 });

@@ -10,7 +10,7 @@
 
 import { decodeBase64, encodeBase64, type RepoTarget } from './domain/repo.ts';
 import { snapshot, type DeliveryRecord } from './domain/deliveries.ts';
-import type { Kind, Lesson, Offering, Tier, Unit } from './domain/types.ts';
+import type { Kind, Lesson, Offering, SchoolCalendar, Tier, Unit } from './domain/types.ts';
 
 export const DEMO_TARGET: RepoTarget = { owner: 'sample', repo: 'almanac', branch: 'main' };
 
@@ -468,9 +468,14 @@ const offerings: Record<string, Offering> = {
 		year_group: 'Year 7',
 		class_label: 'Class A',
 		subject: 'subjects/design_tech',
+		timetable: [
+			{ day: 'Tue', period: 'P2', week: 'both' },
+			{ day: 'Thu', period: 'P4', week: 'both' },
+			{ day: 'Fri', period: 'P1', week: 'A' }
+		],
 		units: [
 			{ unit: 'units/product_design', term: 'Term 1' },
-			{ unit: 'units/simple_circuits', term: 'Term 2' }
+			{ unit: 'units/simple_circuits', term: 'Term 2', start_date: '2026-04-28' }
 		],
 		folder: 'https://drive.example.com/design-tech/2026-y7-class-a'
 	},
@@ -480,6 +485,10 @@ const offerings: Record<string, Offering> = {
 		year_group: 'Year 8',
 		class_label: 'Class B',
 		subject: 'subjects/design_tech',
+		timetable: [
+			{ day: 'Mon', period: 'P3', week: 'both' },
+			{ day: 'Wed', period: 'P1', week: 'B' }
+		],
 		units: [
 			{
 				unit: 'units/simple_circuits',
@@ -490,7 +499,12 @@ const offerings: Record<string, Offering> = {
 					'lessons/04_build_a_torch.json'
 				]
 			},
-			{ unit: 'units/product_design', term: 'Term 3' }
+			{
+				unit: 'units/product_design',
+				term: 'Term 4',
+				start_date: '2026-10-26',
+				end_date: '2026-11-20'
+			}
 		]
 	},
 	'offerings/2026_y09_elective.json': {
@@ -508,6 +522,35 @@ const offerings: Record<string, Offering> = {
 		class_label: 'Class 2',
 		subject: 'subjects/design_tech',
 		units: [{ unit: 'units/product_design', term: 'Term 4 2025 and Term 1 2026' }]
+	}
+};
+
+/** The sample school's year: made-up terms and days off, in the shape of a NSW year. */
+const calendars: Record<string, SchoolCalendar> = {
+	'calendar/2026.json': {
+		year: 2026,
+		periods: [
+			{ id: 'P1', name: 'Period 1', start: '08:50', end: '09:50' },
+			{ id: 'P2', name: 'Period 2', start: '09:50', end: '10:50' },
+			{ id: 'P3', name: 'Period 3', start: '11:15', end: '12:15' },
+			{ id: 'P4', name: 'Period 4', start: '12:15', end: '13:15' },
+			{ id: 'P5', name: 'Period 5', start: '14:00', end: '15:00' }
+		],
+		terms: [
+			{ name: 'Term 1', start: '2026-02-02', end: '2026-04-02' },
+			{ name: 'Term 2', start: '2026-04-21', end: '2026-07-03' },
+			{ name: 'Term 3', start: '2026-07-21', end: '2026-09-25' },
+			{ name: 'Term 4', start: '2026-10-13', end: '2026-12-16' }
+		],
+		days_off: [
+			{ title: 'Swimming carnival', start: '2026-02-20' },
+			{ title: 'Year 7 camp', start: '2026-03-11', end: '2026-03-13', year_groups: ['Year 7'] },
+			{ title: 'Staff development day', start: '2026-04-21' },
+			{ title: 'Assembly', start: '2026-05-14', periods: ['P1', 'P2'] },
+			{ title: 'King’s Birthday', start: '2026-06-08' },
+			{ title: 'Athletics carnival', start: '2026-08-14' },
+			{ title: 'Exams', start: '2026-11-16', end: '2026-11-20', year_groups: ['Year 8'] }
+		]
 	}
 };
 
@@ -596,6 +639,21 @@ const deliveries: Record<string, DeliveryRecord> = {
 		lesson: 'units/product_design/lessons/02_writing_a_brief.json',
 		deliveries: [{ taught: '2026-02-12', by: 'Sample Teacher' }]
 	},
+	'offerings/2026_y08_class_b/taught/units/simple_circuits/lessons/01_battery_and_bulb.json': {
+		offering: '2026-y8-class-b',
+		lesson: 'units/simple_circuits/lessons/01_battery_and_bulb.json',
+		deliveries: [{ taught: '2026-02-09', by: 'Sample Teacher' }]
+	},
+	'offerings/2026_y08_class_b/taught/units/simple_circuits/lessons/03_switches.json': {
+		offering: '2026-y8-class-b',
+		lesson: 'units/simple_circuits/lessons/03_switches.json',
+		deliveries: [{ taught: '2026-02-16', by: 'Sample Teacher' }]
+	},
+	'offerings/2026_y08_class_b/taught/units/simple_circuits/lessons/04_build_a_torch.json': {
+		offering: '2026-y8-class-b',
+		lesson: 'units/simple_circuits/lessons/04_build_a_torch.json',
+		deliveries: [{ taught: '2026-02-23', by: 'Sample Teacher' }]
+	},
 	'offerings/2026_unattributed/taught/units/product_design/lessons/04_cardboard_prototypes.json': {
 		offering: null,
 		lesson: 'units/product_design/lessons/04_cardboard_prototypes.json',
@@ -648,6 +706,7 @@ function files(): Map<string, string> {
 	unit('subjects/media_arts/units/stop_motion', stopMotion, stopMotionLessons);
 	for (const [path, doc] of Object.entries(offerings)) put(path, doc);
 	for (const [path, doc] of Object.entries(deliveries)) put(path, doc);
+	for (const [path, doc] of Object.entries(calendars)) put(path, doc);
 	put('schemas/lesson.schema.json', LESSON_SCHEMA);
 	out.set(
 		'subjects/design_tech/units/product_design/lessons/01_what_makes_good_design.md',

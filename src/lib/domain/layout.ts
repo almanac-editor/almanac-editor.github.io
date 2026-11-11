@@ -26,6 +26,19 @@ export function offeringPaths(paths: Iterable<string>): string[] {
 	return found.sort();
 }
 
+/** The school calendars, `calendar/<year>.json`. */
+export function calendarPaths(paths: Iterable<string>): string[] {
+	const found: string[] = [];
+	for (const path of paths) {
+		if (/^calendar\/\d{4}\.json$/.test(path)) found.push(path);
+	}
+	return found.sort();
+}
+
+export function calendarPath(year: number): string {
+	return `calendar/${year}.json`;
+}
+
 export function schemaPaths(paths: Iterable<string>): string[] {
 	const found: string[] = [];
 	for (const path of paths) {

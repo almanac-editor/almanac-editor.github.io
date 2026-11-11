@@ -123,6 +123,9 @@
 		>
 			{#snippet actions()}
 				{#if o}
+					<a class="btn" href={links.calendar(o)}>
+						<Icon name="calendar" size={16} /> Calendar
+					</a>
 					<a class="btn" href={links.editClass(o, u, t)}>
 						<Icon name="pencil" size={16} /> Edit class
 					</a>
