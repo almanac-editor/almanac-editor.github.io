@@ -6,9 +6,10 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join as joinFs, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { fromCalendarDraft, toCalendarDraft } from './calendarEdit.ts';
 import {
 	deliveryPath,
 	feedbackEntries,
@@ -35,7 +36,7 @@ import {
 } from './unitEdit.ts';
 import { lessonsForOffering } from './offerings.ts';
 import { fromTaskDrafts, tasksForOffering, toTaskDrafts } from './tasks.ts';
-import type { Lesson, Offering, Unit } from './types.ts';
+import type { Lesson, Offering, SchoolCalendar, Unit } from './types.ts';
 import { Schemas } from './validate.ts';
 
 const root = process.env.DATA_REPO;
@@ -60,6 +61,11 @@ describe.skipIf(!root)('real data repo', () => {
 	const lessons = files.filter((f) => /^subjects\/.*\/lessons\/.*\.json$/.test(f));
 	const records = files.filter((f) => /^offerings\/[^/]+\/taught\//.test(f));
 	const offerings = files.filter((f) => /^offerings\/[^/]+\.json$/.test(f));
+	const calendars = existsSync(joinFs(repo, 'calendar'))
+		? readdirSync(joinFs(repo, 'calendar'))
+				.filter((f) => /^\d{4}\.json$/.test(f))
+				.map((f) => `calendar/${f}`)
+		: [];
 	const schemas = new Schemas(
 		Object.fromEntries(
 			readdirSync(joinFs(repo, 'schemas'))
@@ -126,11 +132,24 @@ describe.skipIf(!root)('real data repo', () => {
 			...offerings.map((f) => [f, 'offering.schema.json'] as const),
 			...files
 				.filter((f) => f.endsWith('/outcome.json'))
-				.map((f) => [f, 'outcome.schema.json'] as const)
+				.map((f) => [f, 'outcome.schema.json'] as const),
+			...calendars.map((f) => [f, 'calendar.schema.json'] as const)
 		]
 			.map(([f, name]) => [f, starter.validate(name, JSON.parse(read(f)))] as const)
 			.filter(([, problems]) => problems.length > 0);
 		expect(invalid).toEqual([]);
+	});
+
+	it('saves every untouched school calendar as the same bytes, valid', () => {
+		const bad = calendars.flatMap((f) => {
+			const calendar: SchoolCalendar = JSON.parse(read(f));
+			const next = fromCalendarDraft(calendar, toCalendarDraft(calendar));
+			const problems = schemas.has('calendar.schema.json')
+				? schemas.validate('calendar.schema.json', next)
+				: [];
+			return dump(next) === read(f) && problems.length === 0 ? [] : [f];
+		});
+		expect(bad).toEqual([]);
 	});
 
 	it('saves every untouched unit and outcome draft as the same bytes', () => {

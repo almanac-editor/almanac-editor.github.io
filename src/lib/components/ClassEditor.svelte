@@ -1,7 +1,7 @@
 <script lang="ts">
 	// How a class runs: its units in order, each unit's term, dates, weeks,
-	// notes and lesson list, its one-off lessons, its mode, cohort and folder.
-	// The class's name, colour and Canvas links are not edited here.
+	// notes and lesson list, its one-off lessons, its periods, its mode, cohort and
+	// folder. The class's name, colour and Canvas links are not edited here.
 	import { beforeNavigate, goto } from '$app/navigation';
 	import Icon from './Icon.svelte';
 	import PageHead from './PageHead.svelte';
@@ -10,9 +10,11 @@
 	import { httpsHost } from '#lib/domain/materials.ts';
 	import {
 		MODES,
+		WEEKDAYS,
 		fromClassDraft,
 		newEntry,
 		newOneOff,
+		setSlot,
 		toClassDraft,
 		type OfferingDraft
 	} from '#lib/domain/offeringEdit.ts';
@@ -30,6 +32,7 @@
 		sha,
 		units,
 		oneOffs,
+		periods = [],
 		u = null,
 		t = null
 	}: {
@@ -40,6 +43,8 @@
 		units: UnitEntry[];
 		/** The subject's one-offs, as `one_offs/<name>`. */
 		oneOffs: string[];
+		/** The school day's periods, from the class's year's calendar; empty without one. */
+		periods?: { id: string; name?: string }[];
 		/** The unit page the editor was opened from, if any. */
 		u?: string | null;
 		t?: string | null;
@@ -80,6 +85,26 @@
 		].filter(Boolean)
 	);
 	const oneOffChoices = $derived([...new Set([...oneOffs, ...draft.one_offs.map((o) => o.path)])]);
+
+	/** The calendar's periods, then any the timetable names that the calendar lacks. */
+	const periodIds = $derived([
+		...new Set([...periods.map((p) => p.id), ...draft.timetable.map((s) => s.period)])
+	]);
+	const periodName = (id: string) => periods.find((p) => p.id === id)?.name ?? id;
+	const slotWeek = (day: string, period: string) => {
+		const slot = draft.timetable.find((s) => s.day === day && s.period === period);
+		return slot ? slot.week || 'every' : 'none';
+	};
+
+	function setWeek(
+		day: (typeof WEEKDAYS)[number],
+		period: string,
+		event: Event & { currentTarget: HTMLSelectElement }
+	) {
+		const value = event.currentTarget.value;
+		const week = value === 'none' ? null : value === 'every' ? '' : (value as 'A' | 'B');
+		draft.timetable = setSlot(draft.timetable, day, period, week, periodIds);
+	}
 
 	function addUnit(event: Event & { currentTarget: HTMLSelectElement }) {
 		const rel = event.currentTarget.value;
@@ -460,6 +485,53 @@
 		</section>
 
 		<section>
+			<h2>Periods</h2>
+			<p class="hint">
+				When the class meets each week, or in Week A or Week B of a fortnight. Its calendar lays the
+				lessons over these.
+			</p>
+			{#if periodIds.length}
+				<div class="grid-wrap">
+					<table class="periods">
+						<thead>
+							<tr>
+								<th scope="col"><span class="sr-only">Period</span></th>
+								{#each WEEKDAYS as day (day)}<th scope="col">{day}</th>{/each}
+							</tr>
+						</thead>
+						<tbody>
+							{#each periodIds as period (period)}
+								<tr>
+									<th scope="row">{periodName(period)}</th>
+									{#each WEEKDAYS as day (day)}
+										{@const week = slotWeek(day, period)}
+										<td class:on={week !== 'none'}>
+											<select
+												aria-label="{day} {periodName(period)}"
+												value={week}
+												onchange={(e) => setWeek(day, period, e)}
+											>
+												<option value="none">–</option>
+												<option value="every">Every week</option>
+												<option value="A">Week A</option>
+												<option value="B">Week B</option>
+											</select>
+										</td>
+									{/each}
+								</tr>
+							{/each}
+						</tbody>
+					</table>
+				</div>
+			{:else}
+				<p class="muted">
+					There is no school calendar for {offering.year} yet, so there are no periods to choose.
+					<a href={links.calendarEdit(offering.year, path)}>Add {offering.year}’s calendar</a>.
+				</p>
+			{/if}
+		</section>
+
+		<section>
 			<h2>The class</h2>
 			<div class="row class">
 				<label class="field">
@@ -532,6 +604,45 @@
 
 	section {
 		margin: 0 0 40px;
+	}
+
+	.grid-wrap {
+		overflow-x: auto;
+	}
+
+	.periods {
+		border-collapse: collapse;
+		width: 100%;
+		border-top: 2px solid var(--ink);
+	}
+
+	.periods th,
+	.periods td {
+		padding: 6px;
+		border-bottom: 1px solid var(--rule);
+		text-align: left;
+	}
+
+	.periods thead th {
+		font-size: 13px;
+		font-weight: 700;
+		color: var(--ink-2);
+	}
+
+	.periods tbody th {
+		font-size: 13px;
+		font-weight: 800;
+		white-space: nowrap;
+		color: var(--house-deep);
+	}
+
+	.periods td.on {
+		background: var(--house-soft);
+	}
+
+	.periods select {
+		width: 100%;
+		min-width: 92px;
 	}
 
 	h2 {

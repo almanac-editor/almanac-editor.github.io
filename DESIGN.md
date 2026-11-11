@@ -383,6 +383,17 @@ The run sheet drawn as a carnival lane: a 64px track on paper between two rule-s
 - **Compact:** a 12px strip with no labels or ticks, used in the unit's lesson lanes.
 - Segments and the finish line slide (380ms) as timings are edited. A legend (talk, activity, stretch, finish) sits above the unit lanes.
 
+### Class Calendar
+
+A class's year on a month grid (`@event-calendar/core`, restyled through its `--ec-*` variables), under a 2px ink rule, weekdays only, weeks starting Monday.
+
+- **Taught:** a solid house field with house-on text, as a talk segment.
+- **Planned:** paper with a 2px dashed house outline inset and house-deep text, as a stretch segment.
+- **Not marked taught** (planned for a day already past): warn soft with a dashed warn outline.
+- **Days off and holidays:** sunk background on the day; a day off for some periods only is a 135° sunk hatch. Its name sits beside the day number in 11px muted.
+- **Term weeks:** the week's label (`T1 W3`, with `A` or `B` for a fortnightly class) in 11px house-deep at the start of each row.
+- Each lesson shows its period in bold and its number and name, and links to the lesson in the class's order. Square corners, no shadows. Lessons not marked taught, lessons past their unit's end date and lessons with no period left are listed under the grid as ruled rows led by the date.
+
 ### Feedback Entries
 
 Feedback lives in the lesson margin as a stack of paper entries, each topped with a 3px house rule, 14px text, the "Change next time" line in ink 2 led by a house-deep label, and the author in 12px bold muted. No side stripe, no tint block.

@@ -12,6 +12,18 @@
 		"colour": { "type": "string" },
 		"subject": { "type": "string", "minLength": 1 },
 		"folder": { "type": "string" },
+		"timetable": {
+			"type": "array",
+			"items": {
+				"type": "object",
+				"required": ["day", "period"],
+				"properties": {
+					"day": { "enum": ["Mon", "Tue", "Wed", "Thu", "Fri"] },
+					"period": { "type": "string", "minLength": 1 },
+					"week": { "enum": ["A", "B", "both"] }
+				}
+			}
+		},
 		"units": {
 			"type": "array",
 			"items": {

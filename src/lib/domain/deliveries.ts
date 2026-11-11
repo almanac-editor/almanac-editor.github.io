@@ -131,6 +131,16 @@ export function recordPaths(
 	return found.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 }
 
+/** Every record one class holds, under its `taught/`, in path order. */
+export function classRecordPaths(paths: Iterable<string>, offeringPath: string): string[] {
+	const prefix = `${classDir(offeringPath)}/taught/`;
+	const found: string[] = [];
+	for (const path of paths) {
+		if (path.startsWith(prefix) && path.endsWith('.json')) found.push(path);
+	}
+	return found.sort();
+}
+
 /** Where a feedback item is: which record file, which delivery, which item. */
 export interface ItemRef {
 	path: string;
