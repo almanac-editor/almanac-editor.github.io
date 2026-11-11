@@ -271,9 +271,33 @@ export function plansToKeep(
 	return found;
 }
 
-/** The `source` a kept plan carries: who kept it, when, why, and from which commit. */
-export function keptStamp(date: string, forClass: string, commit: string | null): string {
-	return `plan kept by almanac-editor on ${date}, when ${forClass} was created${commit ? `, from ${commit.slice(0, 7)}` : ''}`;
+/**
+ * The `source` a kept plan carries: who kept it, when, why, and from which
+ * commit. `why` reads on from the date: "when 2027-y7-a was created".
+ */
+export function keptStamp(date: string, why: string, commit: string | null): string {
+	return `plan kept by almanac-editor on ${date}, ${why}${commit ? `, from ${commit.slice(0, 7)}` : ''}`;
+}
+
+/**
+ * The plans one lesson puts at risk: every earlier class that took it with no
+ * plan kept, while a later year's class of the same subject takes it too. The
+ * rule of `missing_plans` in `deliveries.py`, for one lesson.
+ */
+export function plansAtRisk(
+	ref: string,
+	classes: { path: string; offering: Offering; lessons: TakenLesson[] }[],
+	records: Map<string, DeliveryRecord>
+): ToKeep[] {
+	const found: ToKeep[] = [];
+	for (const later of classes) {
+		const taken = later.lessons.find((l) => l.ref === ref);
+		if (!taken) continue;
+		for (const k of plansToKeep({ offering: later.offering, lessons: [taken] }, classes, records)) {
+			if (!found.some((f) => f.recordPath === k.recordPath)) found.push(k);
+		}
+	}
+	return found;
 }
 
 /**

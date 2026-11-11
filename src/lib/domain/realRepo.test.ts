@@ -15,6 +15,7 @@ import {
 	keepOutcome,
 	lessonRef,
 	offeringLessons,
+	plansAtRisk,
 	plansToKeep,
 	recordPaths,
 	type DeliveryRecord
@@ -275,6 +276,13 @@ print(json.dumps(missing_plans()))
 			for (const k of plansToKeep(next, classes, held)) actual.add(`${k.offering.id}  ${k.ref}`);
 		}
 		expect([...actual].sort()).toEqual([...new Set(expected)].sort());
+		// Lesson by lesson, as the editor asks on saving one, the same plans are at risk.
+		const byLesson = new Set(
+			[...new Set(classes.flatMap((c) => c.lessons.map((l) => l.ref)))].flatMap((ref) =>
+				plansAtRisk(ref, classes, held).map((k) => `${k.offering.id}  ${k.ref}`)
+			)
+		);
+		expect([...byLesson].sort()).toEqual([...actual].sort());
 	});
 
 	it('lists open feedback as scripts/deliveries.py does', () => {

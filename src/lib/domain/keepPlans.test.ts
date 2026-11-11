@@ -6,6 +6,7 @@ import {
 	keepPlan,
 	keptStamp,
 	offeringLessons,
+	plansAtRisk,
 	plansToKeep,
 	type DeliveryRecord
 } from './deliveries.ts';
@@ -126,14 +127,33 @@ describe('plansToKeep', () => {
 	});
 });
 
+describe('plansAtRisk', () => {
+	const ref = 'units/pairs/lessons/01.json';
+	const lessons = [{ ref, unit: 'units/pairs' }];
+	const classOf = (year: number) => ({
+		path: `offerings/${year}_y7_a.json`,
+		offering: offering(year),
+		lessons
+	});
+
+	it('names earlier classes once a later class takes the lesson too', () => {
+		const found = plansAtRisk(ref, [classOf(2025), classOf(2026), classOf(2027)], new Map());
+		expect(found.map((k) => k.offering.year)).toEqual([2025, 2026]);
+	});
+
+	it('names none while only one year takes it', () => {
+		expect(plansAtRisk(ref, [classOf(2026)], new Map())).toEqual([]);
+	});
+});
+
 describe('keepPlan', () => {
-	const stamp = keptStamp('2026-10-24', '2027-y7-a', 'abc1234def');
+	const stamp = keptStamp('2026-10-24', 'when 2027-y7-a was created', 'abc1234def');
 
 	it('says who kept the plan, when, why and from which commit', () => {
 		expect(stamp).toBe(
 			'plan kept by almanac-editor on 2026-10-24, when 2027-y7-a was created, from abc1234'
 		);
-		expect(keptStamp('2026-10-24', '2027-y7-a', null)).toBe(
+		expect(keptStamp('2026-10-24', 'when 2027-y7-a was created', null)).toBe(
 			'plan kept by almanac-editor on 2026-10-24, when 2027-y7-a was created'
 		);
 	});
@@ -235,6 +255,30 @@ describe('Keeping plans, against the sample repo', () => {
 		]);
 		expect(kept.deliveries[0].plan_commit).toBe(before);
 		expect(await data.plansToKeep(next)).toEqual([]);
+	});
+
+	it('keeps the plan as it was before an edit, in the same commit as the edit', async () => {
+		const store = repo();
+		const data = new Data(store);
+		const path = 'subjects/design_tech/units/product_design/lessons/02_writing_a_brief.json';
+		const ref = 'units/product_design/lessons/02_writing_a_brief.json';
+		// 2026's classes take lesson 2 after 2025's Year 7, which has no record for it.
+		const keep = await data.plansAtRisk(path);
+		expect(keep.map((k) => [k.offeringPath, k.outcome])).toEqual([
+			['offerings/2025_y07_class_a.json', 'write']
+		]);
+		const { doc: before, sha } = await data.lesson(path);
+		const edited = { ...before, title: 'Writing a sharper brief' };
+		const newSha = await data.saveLesson(path, edited, sha, 'Edit 02', keep, before);
+		const saved = await data.lesson(path);
+		expect(saved.sha).toBe(newSha);
+		expect(saved.doc.title).toBe('Writing a sharper brief');
+		const record = (
+			await store.readJson<DeliveryRecord>(`offerings/2025_y07_class_a/taught/${ref}`)
+		).doc;
+		expect(record.deliveries[0].plan?.title).toBe(before.title);
+		expect(record.deliveries[0].source).toMatch(/before the lesson was edited/);
+		expect(await data.plansAtRisk(path)).toEqual([]);
 	});
 
 	it('refuses the whole save when a file changed since it was read', async () => {

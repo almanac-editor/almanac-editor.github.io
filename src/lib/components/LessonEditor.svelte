@@ -28,7 +28,8 @@
 	import type { Lesson, RegistryEntry } from '#lib/domain/types.ts';
 	import type { Problem, Schemas } from '#lib/domain/validate.ts';
 	import { session } from '#lib/session.svelte.ts';
-	import { titleCase } from '#lib/house.ts';
+	import { className, titleCase } from '#lib/house.ts';
+	import type { ToKeep } from '#lib/domain/deliveries.ts';
 
 	const MODES = ['introduced', 'developed', 'consolidated', 'revisited'] as const;
 
@@ -79,6 +80,7 @@
 		| { kind: 'problems'; problems: Problem[] }
 		| { kind: 'conflict' }
 		| { kind: 'error'; text: string }
+		| { kind: 'keep'; keep: ToKeep[] }
 		| null
 	>(null);
 
@@ -92,8 +94,14 @@
 		return shape(before) !== shape(after);
 	}
 
-	async function save() {
+	/**
+	 * `ask` checks first whether the save would put an earlier class's plan at
+	 * risk, and if so asks; `keep` keeps those plans in the same commit, and
+	 * `skip` saves the lesson alone.
+	 */
+	async function save(choice: 'ask' | 'keep' | 'skip' = 'ask') {
 		if (saving) return;
+		const asked = status?.kind === 'keep' ? status.keep : [];
 		status = null;
 		let next: Lesson;
 		try {
@@ -112,10 +120,21 @@
 		}
 		saving = true;
 		try {
+			const data = session.data;
+			if (!create && data && choice === 'ask') {
+				// A lesson an earlier class had with no plan kept, which a later class also takes.
+				const atRisk = await data.plansAtRisk(path).catch(() => [] as ToKeep[]);
+				if (atRisk.some((k) => k.outcome !== 'several')) {
+					status = { kind: 'keep', keep: atRisk };
+					return;
+				}
+			}
 			const text = message.trim() || (create ? `Add lesson ${stem(path)}` : `Edit ${stem(path)}`);
 			let newSha = '';
 			if (create) await create(next, text);
-			else newSha = await store.writeJson(path, next, sha, text);
+			else if (data && choice === 'keep' && asked.length) {
+				newSha = await data.saveLesson(path, next, sha, text, asked, lesson);
+			} else newSha = await store.writeJson(path, next, sha, text);
 			const moved = sectionsChanged(lesson, next);
 			// The new baseline goes first, so a page that moves on after the save is not asked to discard.
 			draft = toDraft(next);
@@ -520,6 +539,29 @@
 		</div>
 	{:else if status?.kind === 'error'}
 		<div class="msg warn"><div>Not saved. {status.text}</div></div>
+	{:else if status?.kind === 'keep'}
+		{@const kept = status.keep.filter((k) => k.outcome !== 'several')}
+		{@const left = status.keep.length - kept.length}
+		{@const whom = [...new Set(kept.map((k) => `${className(k.offering)} (${k.offering.year})`))]}
+		<div class="msg note">
+			<div>
+				{whom.join(', ')}
+				{whom.length === 1 ? 'had' : 'each had'} this lesson with no plan kept, and a later class takes
+				it too. Saving changes the plan they were taught. Keep it as it stands now, before your edit,
+				in {whom.length === 1 ? 'that class’s' : 'each class’s'} record?
+				{#if left}
+					{left === 1 ? 'One class' : `${left} classes`} that had it more than once {left === 1
+						? 'is'
+						: 'are'} left as {left === 1 ? 'it is' : 'they are'}.
+				{/if}
+				<div class="choices">
+					<button type="button" class="primary" onclick={() => save('keep')}
+						>Keep {kept.length === 1 ? 'the plan' : 'the plans'} and save</button
+					>
+					<button type="button" onclick={() => save('skip')}>Save without keeping</button>
+				</div>
+			</div>
+		</div>
 	{/if}
 	<div class="bar">
 		<span class="state">
@@ -545,7 +587,7 @@
 		<button
 			class="primary"
 			type="button"
-			onclick={save}
+			onclick={() => save()}
 			disabled={saving || !(dirty || create) || !session.active}
 		>
 			{saving ? 'Saving…' : create ? 'Create lesson' : 'Save'}
@@ -829,6 +871,17 @@
 	.dock .msg {
 		margin: 0 0 8px;
 		box-shadow: var(--shadow);
+	}
+
+	.choices {
+		display: flex;
+		flex-wrap: wrap;
+		gap: 8px;
+		margin-top: 8px;
+	}
+
+	.choices button {
+		margin-top: 0;
 	}
 
 	.dock .msg ul {
