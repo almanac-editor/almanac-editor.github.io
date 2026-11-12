@@ -19,6 +19,7 @@ import {
 	recordPaths,
 	resolveFeedback,
 	today,
+	unitRecordPaths,
 	withDelivery,
 	withMaterials,
 	type DeliveryRecord,
@@ -474,6 +475,27 @@ export class Data {
 		return Promise.all(
 			paths.map(async (path) => ({
 				path,
+				record: (await this.store.readJson<DeliveryRecord>(path)).doc
+			}))
+		);
+	}
+
+	/**
+	 * One class's records for one unit's lessons, each with its lesson's ref
+	 * relative to the unit, for the unit's coverage page. Empty when the class
+	 * teaches another subject.
+	 */
+	async unitDeliveries(
+		offeringPath: string,
+		unitDir: string
+	): Promise<{ ref: string; record: DeliveryRecord }[]> {
+		const [paths, offering] = await Promise.all([this.store.paths(), this.offering(offeringPath)]);
+		const subject = lessonRef(`${unitDir}/`)?.subject;
+		if (subject === undefined || normalise(offering.subject ?? '') !== normalise(subject))
+			return [];
+		return Promise.all(
+			unitRecordPaths(paths.keys(), offeringPath, unitDir).map(async ({ path, ref }) => ({
+				ref,
 				record: (await this.store.readJson<DeliveryRecord>(path)).doc
 			}))
 		);

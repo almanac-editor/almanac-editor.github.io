@@ -48,6 +48,7 @@ src/lib/domain/   plain TypeScript, no Svelte, unit-tested
   newUnit.ts      a new unit, and a new subject: where they go, what they hold
   unitEdit.ts     a unit's own fields and dot points; a subject's outcome.json
   tasks.ts        a unit's assessment tasks: which a class sat, and editing them
+  coverage.ts     a unit's dot points against its lessons: planned, and as taught
   schedule.ts     a class's calendar: term weeks, its periods, when each lesson falls
   calendarEdit.ts the school calendar editor's draft (calendar/<year>.json)
   layout.ts       where units, offerings, calendars, schemas and content files are
@@ -88,15 +89,18 @@ src/lib/components/, src/routes/   UI
   starter schemas with its first unit. Files that already hold plans but no
   `schemas/` save unchecked; the app never adds schemas to them. The starter
   schemas must never be stricter than a real repo's (a `DATA_REPO` test checks).
-- **Duplicated logic.** `offerings.ts`, `tasks.ts` (`tasksForOffering`) and
-  `deliveries.ts` duplicate Python in the data repo (`offering_lessons.py`,
-  `deliveries.py`). The `DATA_REPO`
-  parity tests compare them; keep them passing.
+- **Duplicated logic.** `offerings.ts`, `tasks.ts` (`tasksForOffering`),
+  `deliveries.ts` and `coverage.ts` (`gather`, `classify`) duplicate Python in
+  the data repo (`offering_lessons.py`, `deliveries.py`, `coverage_report.py`).
+  The `DATA_REPO` parity tests compare them; keep them passing. Coverage as
+  taught, from delivery records, has no Python counterpart.
 - **Feedback lives on delivery records**
   (`offerings/<class>/taught/<lesson path>.json`), never on the lesson. Items
   are applied or declined, never deleted. Read a lesson's records on demand,
   never every record on every page. The one exception is a class's calendar
-  page, which reads that one class's records (`Data.classDeliveries`).
+  page, which reads that one class's records (`Data.classDeliveries`). A
+  unit's coverage page reads one class's records for that unit only
+  (`Data.unitDeliveries`).
 - **Planned dates are worked out, never saved.** The school calendar
   (`calendar/<year>.json`: periods, terms, days off) and an offering's
   `timetable` give a class its periods; `schedule.ts` puts taught lessons on

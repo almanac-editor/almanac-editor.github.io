@@ -10,6 +10,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join as joinFs, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { fromCalendarDraft, toCalendarDraft } from './calendarEdit.ts';
+import { classify, gather, lessonSources } from './coverage.ts';
 import {
 	deliveryPath,
 	feedbackEntries,
@@ -36,6 +37,7 @@ import {
 	type OutcomeSet
 } from './unitEdit.ts';
 import { lessonsForOffering } from './offerings.ts';
+import { join as joinPath } from './paths.ts';
 import { fromTaskDrafts, tasksForOffering, toTaskDrafts } from './tasks.ts';
 import type { Lesson, Offering, SchoolCalendar, Unit } from './types.ts';
 import { Schemas } from './validate.ts';
@@ -402,6 +404,56 @@ print(json.dumps(out))
 			const unit: Unit = JSON.parse(read(`${unitDir}/unit.json`));
 			const offering: Offering = JSON.parse(read(path));
 			actual[key] = lessonsForOffering(unitDir, unit, offering, term === 'None' ? null : term);
+		}
+		expect(actual).toEqual(expected);
+	});
+
+	it('flags each unit’s coverage as gather and classify in coverage_report.py do', () => {
+		const python = `
+import json, sys
+from pathlib import Path
+sys.path.insert(0, "scripts")
+from coverage_report import classify, gather
+from offering_lessons import lessons_for_offering
+def report(unit_dir, refs=None, oid=None, term=None):
+    registry, links, dangling = gather(unit_dir, refs, oid, term)
+    flags = classify(registry, links)
+    return {"flags": {f: [rid for rid, _, _ in rows] for f, rows in flags.items()}, "dangling": dangling}
+out = {}
+for u in sorted(Path("subjects").rglob("unit.json")):
+    out[f"{u.parent.as_posix()}|None|None"] = report(u.parent)
+for o in sorted(Path("offerings").glob("*.json")):
+    offering = json.loads(o.read_text(encoding="utf-8"))
+    for entry in offering["units"]:
+        unit_dir = Path(offering["subject"]) / entry["unit"]
+        for term in (None, entry.get("term")):
+            refs = lessons_for_offering(unit_dir, o, term)
+            out[f"{unit_dir.as_posix()}|{o.as_posix()}|{term}"] = report(unit_dir, refs, offering["id"], term)
+print(json.dumps(out))
+`;
+		const expected: Record<string, unknown> = JSON.parse(
+			execFileSync('python3', ['-c', python], { cwd: repo, encoding: 'utf-8' })
+		);
+		const actual: Record<string, unknown> = {};
+		for (const key of Object.keys(expected)) {
+			const [unitDir, path, t] = key.split('|');
+			const term = t === 'None' ? null : t;
+			const unit: Unit = JSON.parse(read(`${unitDir}/unit.json`));
+			const offering: Offering | null = path === 'None' ? null : JSON.parse(read(path));
+			const refs = offering
+				? lessonsForOffering(unitDir, unit, offering, term)
+				: (unit.lessons ?? []);
+			const lessons = refs.map((ref) => {
+				const at = joinPath(unitDir, ref);
+				return { ref, lesson: files.includes(at) ? (JSON.parse(read(at)) as Lesson) : null };
+			});
+			const registry = unit.syllabus_registry ?? [];
+			const gathered = gather(
+				registry,
+				lessonSources(lessons),
+				tasksForOffering(unit, offering?.id ?? null, term)
+			);
+			actual[key] = { flags: classify(registry, gathered), dangling: gathered.dangling };
 		}
 		expect(actual).toEqual(expected);
 	});
