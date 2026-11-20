@@ -127,6 +127,10 @@ These were agreed in planning, each to become an issue:
 The visual design ("House Colours") is recorded in `DESIGN.md`, and product
 context in `PRODUCT.md`. Read both before changing the UI.
 
+Terms are agreed in `GLOSSARY.md`. Use its words in code, UI copy, issues and
+conversation. Don't coin a new term or reuse one loosely: agree it with the
+owner and add it to the glossary first.
+
 ## Tooling
 
 ```sh

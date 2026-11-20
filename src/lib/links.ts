@@ -27,6 +27,8 @@ export const links = {
 		resolve('/class-edit') + query({ o, u, t }),
 	newLesson: (u: string, o?: string | null, t?: string | null) =>
 		resolve('/new-lesson') + query({ u, o, t }),
+	/** One of a class's assessment specs: `o` is the offering's path, `a` the spec's file stem. */
+	assessment: (o: string, a: string) => resolve('/assessment') + query({ o, a }),
 	unit: (u: string, o?: string | null, t?: string | null) => resolve('/unit') + query({ u, o, t }),
 	lesson: (u: string, l: string, o?: string | null, t?: string | null, edit = false) =>
 		resolve('/lesson') + query({ u, l, o, t, edit: edit ? '1' : null })

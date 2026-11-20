@@ -13,6 +13,7 @@
 	import { className, houseMap, houseOf, humanise, titleCase } from '#lib/house.ts';
 	import { subjectOf } from '#lib/domain/layout.ts';
 	import { tasksForOffering } from '#lib/domain/tasks.ts';
+	import { leadOf, readNotification } from '#lib/domain/notification.ts';
 	import { links } from '#lib/links.ts';
 	import { session } from '#lib/session.svelte.ts';
 
@@ -80,6 +81,52 @@
 			).then((rows) => new Map(rows))
 		);
 	});
+	/**
+	 * In a class's context, the class's assessments that examine this unit,
+	 * with the due date and weighting from each notification. Read after the
+	 * page, so the lessons never wait on them.
+	 */
+	const specs = $derived.by(() => {
+		const data = session.data;
+		const pending = load;
+		if (!data || !pending || !o) return null;
+		return pending.then(async ({ offering }) => {
+			if (!offering) return [];
+			const names = await data.assessments(o);
+			const found = await Promise.all(
+				names.map(async (name) => {
+					const spec = (await data.assessment(o, name).catch(() => null))?.doc;
+					if (!spec?.units?.some((unit) => join(offering.subject, unit) === u)) return null;
+					const text = await data.text(spec.notification).catch(() => null);
+					const details = text ? readNotification(text).details : [];
+					const detail = (re: RegExp) => {
+						const d = details.find((x) => re.test(x.label));
+						return d ? leadOf(d.text).lead : null;
+					};
+					return {
+						name,
+						title: spec.title,
+						due: detail(/^(due|date)$/i),
+						weight: detail(/^weighting$/i),
+						marks: detail(/^(total\s+)?marks$/i)
+					};
+				})
+			);
+			return found.filter((x) => x !== null);
+		});
+	});
+	type Specs = Awaited<NonNullable<typeof specs>>;
+	let classSpecs = $state.raw<Specs>([]);
+	$effect(() => {
+		const pending = specs;
+		classSpecs = [];
+		pending
+			?.then((list) => {
+				if (specs === pending) classSpecs = list;
+			})
+			.catch(() => {});
+	});
+
 	type Marks = Awaited<NonNullable<typeof marks>>;
 	let found = $state.raw<Marks | null>(null);
 	$effect(() => {
@@ -224,6 +271,26 @@
 						<Icon name="pencil" size={16} /> Edit tasks
 					</a>
 				</div>
+				{#if classSpecs.length && o}
+					<ul class="specs">
+						{#each classSpecs as s (s.name)}
+							<li>
+								<a href={links.assessment(o, s.name)}>
+									<span class="spec-due">{s.due ?? 'No date'}</span>
+									<span class="spec-what">
+										<span class="task-title">{s.title}</span>
+										<span class="sub">
+											{[s.weight, s.marks ? `${s.marks} marks` : '', 'Notification and rubric']
+												.filter(Boolean)
+												.join(' · ')}
+										</span>
+									</span>
+									<Icon name="right" size={18} />
+								</a>
+							</li>
+						{/each}
+					</ul>
+				{/if}
 				{#if tasks.length}
 					<ul>
 						{#each tasks as task, i (i)}
@@ -245,7 +312,7 @@
 							</li>
 						{/each}
 					</ul>
-				{:else}
+				{:else if !classSpecs.length}
 					<p class="sub">
 						{offering
 							? `${className(offering)} sits none of this unit’s tasks.`
@@ -468,6 +535,53 @@
 
 	.task-title {
 		font-weight: 750;
+	}
+
+	.specs {
+		margin-bottom: 8px !important;
+	}
+
+	.specs li {
+		padding: 0 !important;
+	}
+
+	.specs a {
+		display: grid;
+		grid-template-columns: minmax(120px, 190px) minmax(0, 1fr) auto;
+		gap: 4px 18px;
+		align-items: center;
+		padding: 14px 4px;
+		text-decoration: none;
+		transition: background-color 160ms var(--ease);
+	}
+
+	.specs a:hover {
+		background: var(--house-soft);
+	}
+
+	.spec-due {
+		font-size: 17px;
+		font-weight: 850;
+		font-stretch: 78%;
+		line-height: 1.1;
+		color: var(--house-deep);
+	}
+
+	.spec-what {
+		display: flex;
+		flex-direction: column;
+		gap: 2px;
+		min-width: 0;
+	}
+
+	@media (max-width: 640px) {
+		.specs a {
+			grid-template-columns: minmax(0, 1fr) auto;
+		}
+
+		.spec-due {
+			grid-column: 1 / -1;
+		}
 	}
 
 	.tasks > .sub {

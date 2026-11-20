@@ -21,11 +21,26 @@
 
 	const load = $derived(
 		session.data
-			? Promise.all([session.data.units(), session.data.offerings()]).then(([units, offerings]) => {
-					const subjects = Object.entries(Object.groupBy(units, (entry) => subjectOf(entry.dir)));
-					const plans = units.reduce((n, e) => n + (e.unit.lessons?.length ?? 0), 0);
-					return { units, subjects: subjects as [string, typeof units][], offerings, plans };
-				})
+			? Promise.all([session.data.units(), session.data.offerings()]).then(
+					async ([units, offerings]) => {
+						const data = session.data!;
+						const subjects = Object.entries(Object.groupBy(units, (entry) => subjectOf(entry.dir)));
+						const plans = units.reduce((n, e) => n + (e.unit.lessons?.length ?? 0), 0);
+						// Each class's assessment specs, by name, from the listing alone.
+						const specs = new Map(
+							await Promise.all(
+								offerings.map(async ([path]) => [path, await data.assessments(path)] as const)
+							)
+						);
+						return {
+							units,
+							subjects: subjects as [string, typeof units][],
+							offerings,
+							plans,
+							specs
+						};
+					}
+				)
 			: null
 	);
 
@@ -39,7 +54,7 @@
 	{#await load}
 		<PageHead title={null} />
 		<div class="page"><div class="loading"><span></span><span></span><span></span></div></div>
-	{:then { units, subjects, offerings, plans }}
+	{:then { units, subjects, offerings, plans, specs }}
 		{@const colourOf = (path: string, colour: unknown) =>
 			path in chosen ? chosen[path] : typeof colour === 'string' ? colour : null}
 		{@const houses = houseMap(
@@ -134,6 +149,18 @@
 								fixed={colourOf(path, offering.colour)}
 								onsaved={(colour) => (chosen[path] = colour)}
 							/>
+							{#if specs.get(path)?.length}
+								<ul class="specs" aria-label="{className(offering)}’s assessments">
+									{#each specs.get(path) ?? [] as name (name)}
+										<li>
+											<a class="copy" href={links.assessment(path, name)}>
+												<Icon name="note" size={14} />
+												{humanise(name)}
+											</a>
+										</li>
+									{/each}
+								</ul>
+							{/if}
 							<a class="copy" href={links.editClass(path)}>
 								<Icon name="pencil" size={14} /> Edit class
 							</a>
@@ -262,6 +289,12 @@
 		font-weight: 650;
 		text-decoration: none;
 		opacity: 0.85;
+	}
+
+	.specs {
+		list-style: none;
+		margin: 6px 0 4px;
+		padding: 0;
 	}
 
 	.copy:hover {

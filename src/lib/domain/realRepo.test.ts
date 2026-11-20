@@ -19,6 +19,13 @@ import {
 	recordPaths,
 	type DeliveryRecord
 } from './deliveries.ts';
+import {
+	specProblems,
+	topicLines,
+	unitDir,
+	type AssessmentSpec,
+	type Registries
+} from './assessments.ts';
 import { dump } from './format.ts';
 import { unitDirs } from './layout.ts';
 import { fromDraft, toDraft } from './lessonEdit.ts';
@@ -414,5 +421,61 @@ print(json.dumps(out))
 			).map((t) => t.title);
 		}
 		expect(actual).toEqual(expected);
+	});
+
+	describe('assessment specs', () => {
+		const specs = files.filter((f) => /^offerings\/[^/]+\/assessments\/[^/]+\.json$/.test(f));
+
+		it('reads each notification’s topic lines as test_assessment_specs.py does', () => {
+			// The test module imports pytest, so only its _topic_lines is run.
+			const expected: Record<string, string[] | null> = python(`
+import ast, re
+tree = ast.parse(Path("tests/test_assessment_specs.py").read_text(encoding="utf-8"))
+fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "_topic_lines")
+ns = {"re": re}
+exec(compile(ast.Module(body=[fn], type_ignores=[]), "_topic_lines", "exec"), ns)
+out = {}
+for p in sorted(Path("offerings").glob("*/assessments/*.json")):
+    note = json.loads(p.read_text(encoding="utf-8"))["notification"]
+    try:
+        out[note] = ns["_topic_lines"](Path(note).read_text(encoding="utf-8"))
+    except IndexError:
+        out[note] = None
+print(json.dumps(out))
+`);
+			const actual = Object.fromEntries(
+				Object.keys(expected).map((note) => [note, topicLines(read(note))])
+			);
+			expect(actual).toEqual(expected);
+		});
+
+		it('finds every spec valid and nothing wrong with any', () => {
+			const problems: Record<string, string[]> = {};
+			for (const path of specs) {
+				const spec = JSON.parse(read(path)) as AssessmentSpec;
+				const found = schemas.has('assessment.schema.json')
+					? schemas.validate('assessment.schema.json', spec).map((p) => JSON.stringify(p))
+					: [];
+				const offering = JSON.parse(
+					read(path.replace(/\/assessments\/[^/]+$/, '.json'))
+				) as Offering;
+				const registries: Registries = new Map(
+					spec.units.map((unit) => {
+						const file = `${unitDir(offering, unit)}/unit.json`;
+						const doc = files.includes(file) ? (JSON.parse(read(file)) as Unit) : null;
+						return [unit, doc ? (doc.syllabus_registry ?? []) : null];
+					})
+				);
+				let notification: string | null = null;
+				try {
+					notification = read(spec.notification);
+				} catch {
+					// Missing: specProblems says so.
+				}
+				found.push(...specProblems(spec, offering, registries, notification));
+				if (found.length) problems[path] = found;
+			}
+			expect(problems).toEqual({});
+		});
 	});
 });
