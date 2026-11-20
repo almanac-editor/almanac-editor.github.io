@@ -102,9 +102,14 @@ describe.skipIf(!root)('real data repo', () => {
 				const before = read(f).split('\n');
 				const after = dump(withLesson(unit, ref)).split('\n');
 				const added = after.filter((line) => !before.includes(line));
+				// An empty `"lessons": []` opens onto its own lines, so the first plan adds two.
+				const empty = !unit.lessons?.length;
 				const ok =
-					after.length === before.length + 1 &&
-					added.every((line) => line.includes('"lessons/')) &&
+					after.length === before.length + (empty ? 2 : 1) &&
+					added.every(
+						(line) =>
+							line.includes('"lessons/') || (empty && /^\s*("lessons": \[|\],?)$/.test(line))
+					) &&
 					!files.includes(`${dir}/${ref}`) &&
 					schemas.validate('unit.schema.json', withLesson(unit, ref)).length === 0;
 				return ok ? [] : [`${f} ${ref}`];
