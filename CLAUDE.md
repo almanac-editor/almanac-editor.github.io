@@ -34,7 +34,7 @@ which is the wrong place.
 src/lib/domain/   plain TypeScript, no Svelte, unit-tested
   store.ts        Store: what the app needs from wherever the files live
   repo.ts         the only code that talks to GitHub (trees, blobs, contents PUT)
-  folder.ts       FolderStore: a local folder (subjects/, offerings/, schemas/)
+  folder.ts       FolderStore: a local folder (subjects/, offerings/, schemas/, calendar/)
   format.ts       dump(): the house JSON format
   lessonEdit.ts   toDraft / fromDraft: editing without disturbing the file
   offerings.ts    port of the data repo's scripts/offering_lessons.py
