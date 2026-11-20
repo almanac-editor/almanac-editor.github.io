@@ -1,6 +1,6 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-10-05T23:00:00+11:00",
+  "generatedAt": "2026-11-12T00:30:00+11:00",
   "title": "Design System: Almanac Editor",
   "extensions": {
     "colorMeta": {
@@ -43,11 +43,17 @@
       "house-lagoon": { "role": "primary", "displayName": "Lagoon", "canonical": "#0e7490", "dark": "#138aa9", "tonalRamp": ["oklch(15% 0.03 222)", "oklch(25% 0.05 222)", "oklch(35% 0.07 222)", "oklch(45% 0.08 222)", "oklch(52% 0.09 222)", "oklch(65% 0.08 222)", "oklch(80% 0.05 222)", "oklch(95% 0.02 222)"] },
       "house-lagoon-soft": { "role": "primary", "displayName": "Lagoon Soft", "canonical": "#dcf0f5", "dark": "#0f303a" },
       "house-lagoon-deep": { "role": "primary", "displayName": "Lagoon Deep", "canonical": "#0a5568", "dark": "#a5e2f1" },
+      "house-tangerine": { "role": "primary", "displayName": "Tangerine", "canonical": "#c2410c", "dark": "#d4501a", "tonalRamp": ["oklch(15% 0.04 42)", "oklch(25% 0.07 42)", "oklch(35% 0.1 42)", "oklch(45% 0.13 42)", "oklch(52% 0.15 42)", "oklch(65% 0.12 42)", "oklch(80% 0.07 42)", "oklch(95% 0.02 42)"] },
+      "house-tangerine-soft": { "role": "primary", "displayName": "Tangerine Soft", "canonical": "#fde6d8", "dark": "#3b1f12" },
+      "house-tangerine-deep": { "role": "primary", "displayName": "Tangerine Deep", "canonical": "#8a2e07", "dark": "#ffc4a3" },
+      "house-moss": { "role": "primary", "displayName": "Moss", "canonical": "#4d7c0f", "dark": "#5b8f17", "tonalRamp": ["oklch(15% 0.04 130)", "oklch(25% 0.07 130)", "oklch(35% 0.1 130)", "oklch(45% 0.13 130)", "oklch(52% 0.15 130)", "oklch(65% 0.12 130)", "oklch(80% 0.07 130)", "oklch(95% 0.02 130)"] },
+      "house-moss-soft": { "role": "primary", "displayName": "Moss Soft", "canonical": "#e6f0d5", "dark": "#1f2c10" },
+      "house-moss-deep": { "role": "primary", "displayName": "Moss Deep", "canonical": "#365a0a", "dark": "#c8e6a0" },
       "house-on": { "role": "primary", "displayName": "House On (white)", "canonical": "#ffffff" }
     },
     "houses": {
-      "order": ["cobalt", "emerald", "ruby", "saffron", "plum", "lagoon"],
-      "assignment": "Index of the offering's path in the sorted list of all offering paths, modulo 6 (src/lib/house.ts houseOf). Pages outside a class wear 'none'.",
+      "order": ["cobalt", "emerald", "ruby", "saffron", "plum", "lagoon", "tangerine", "moss"],
+      "assignment": "An offering's fixed `colour` first; otherwise its index in the sorted list of offering paths (numbers compared as numbers), cycling through the eight houses and moving to the next free house only when a fixed class holds that one (src/lib/house.ts houseMap / houseOf). Pages outside a class wear 'none'.",
       "roles": {
         "--house": "flat field: header, rail band, talk segment, primary button, focus ring, caret, figures on paper",
         "--house-on": "text on the field",
@@ -64,6 +70,7 @@
       "title": { "displayName": "Title", "purpose": "Lesson and unit names in lists and tiles (17-18px)." },
       "title-sm": { "displayName": "Title Small", "purpose": "h3." },
       "body": { "displayName": "Body", "purpose": "Reading text, tabular numerals on; summaries at 17px within 62-68ch." },
+      "control": { "displayName": "Control", "purpose": "Button and tab labels, coverage flags in words, lines in an opened row; 650 at 14px." },
       "label": { "displayName": "Label", "purpose": "Field labels, crumbs, header meta, counts; sentence case." },
       "micro": { "displayName": "Micro", "purpose": "Lane segment labels, tick numbers, finish flag, term codes, offering ids." },
       "mono": { "displayName": "Mono", "purpose": "Inline code and raw JSON only." }
@@ -89,10 +96,11 @@
     ],
     "breakpoints": [
       { "name": "narrow", "value": "640px", "purpose": "Home class tag stacks; run sheet drops the kind column; pairs go single column." },
-      { "name": "lanes", "value": "720px", "purpose": "Unit lane rows wrap the bar under the title." },
+      { "name": "lanes", "value": "720px", "purpose": "Unit lane rows wrap the bar under the title; the coverage table hides its column row and stacks each flag under the text." },
       { "name": "rail", "value": "900px", "purpose": "Rail becomes an off-canvas drawer behind a top bar." },
       { "name": "margin", "value": "1000px", "purpose": "Lesson margin drops under the body." },
-      { "name": "wide", "value": "1700px", "purpose": "Page cap grows from 1180px to 1440px." }
+      { "name": "wide", "value": "1700px", "purpose": "Page cap grows from 1180px to 1560px; measure and margin column widen." },
+      { "name": "wider", "value": "2200px", "purpose": "Page cap grows to 1760px and body type steps to 16px." }
     ]
   },
   "components": [
@@ -167,13 +175,29 @@
       "description": "One tinted block with one leading mark; diamond for warn, circle for ok, square for note.",
       "html": "<div class=\"ds-msg ds-warn\"><div>This plan runs 5 minutes over its length.</div></div><div class=\"ds-msg ds-ok\"><div>Committed to main.</div></div><div class=\"ds-msg ds-note\"><div>You are viewing sample lessons.</div></div>",
       "css": ".ds-msg { display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; margin: 12px 0; font: 400 14px/1.5 Archivo, system-ui, sans-serif; } .ds-msg::before { content: ''; flex: none; width: 10px; height: 10px; margin-top: 5px; background: currentColor; } .ds-warn { background: #fbe5e0; color: #8a1f10; } .ds-warn::before { transform: rotate(45deg); } .ds-ok { background: #ddf1e8; color: #15171c; } .ds-ok::before { background: #0b7a55; border-radius: 50%; } .ds-note { background: #fbefd3; color: #6e4b03; }"
+    },
+    {
+      "name": "Class Calendar",
+      "kind": "custom",
+      "refersTo": "page-head",
+      "description": "A class's year on a weekday month grid: taught lessons solid house, planned ones dashed, unmarked past ones in warn, days off sunk.",
+      "html": "<div class=\"ds-cal\"><div class=\"ds-cal-week\">T1 W3</div><div class=\"ds-cal-grid\"><div class=\"ds-cal-day\"><span class=\"ds-cal-n\">9</span><a href=\"#\" class=\"ds-cal-ev ds-cal-taught\"><b>P2</b> 01 Battery and bulb</a></div><div class=\"ds-cal-day\"><span class=\"ds-cal-n\">10</span></div><div class=\"ds-cal-day ds-cal-off\"><span class=\"ds-cal-n\">11 <span class=\"ds-cal-name\">Staff day</span></span></div><div class=\"ds-cal-day\"><span class=\"ds-cal-n\">12</span><a href=\"#\" class=\"ds-cal-ev ds-cal-unmarked\"><b>P4</b> 02 Series circuits</a></div><div class=\"ds-cal-day\"><span class=\"ds-cal-n\">13</span><a href=\"#\" class=\"ds-cal-ev ds-cal-planned\"><b>P1</b> 03 Switches</a></div></div></div>",
+      "css": ".ds-cal { --house: #1e3bb3; --house-on: #fff; --house-soft: #e3e8fa; --house-deep: #142a85; font-family: Archivo, system-ui, sans-serif; border-top: 2px solid #15171c; } .ds-cal-week { font-size: 11px; font-weight: 700; color: var(--house-deep); padding: 4px 2px; } .ds-cal-grid { display: grid; grid-template-columns: repeat(5, minmax(0, 1fr)); border-left: 1px solid #dcded6; } .ds-cal-day { min-height: 78px; padding: 4px; border-right: 1px solid #dcded6; border-bottom: 1px solid #dcded6; background: #fcfcfa; display: flex; flex-direction: column; gap: 3px; } .ds-cal-off { background: #e9eae4; } .ds-cal-n { font-size: 12px; font-weight: 700; color: #3a3d45; } .ds-cal-name { font-size: 11px; font-weight: 400; color: #5f636d; } .ds-cal-ev { display: block; font-size: 12px; padding: 3px 5px; text-decoration: none; } .ds-cal-ev b { font-weight: 800; } .ds-cal-taught { background: var(--house); color: var(--house-on); } .ds-cal-taught:hover { background: var(--house-deep); } .ds-cal-planned { background: #fcfcfa; color: var(--house-deep); outline: 2px dashed var(--house); outline-offset: -2px; } .ds-cal-unmarked { background: #fbe5e0; color: #8a1f10; outline: 2px dashed #c4321d; outline-offset: -2px; } .ds-cal-ev:focus-visible { outline: 2px solid var(--house); outline-offset: 1px; }"
+    },
+    {
+      "name": "Coverage Table",
+      "kind": "custom",
+      "refersTo": "page-head",
+      "description": "A unit's dot points per phase, planned against taught: the syllabus id in the leading cell, each flag a small key and a label in words, rows that open on each flag's meaning and the lessons behind them. Only lesson links count; tasks are listed apart. Keys in house-deep, shortfalls in warn-deep or note-deep, a chevron on each row.",
+      "html": "<div class=\"ds-cov\"><div class=\"ds-cov-cols\"><span></span><span>Dot point</span><span>Planned</span><span>Taught</span></div><details class=\"ds-cov-row\" open><summary><span class=\"ds-cov-id\">DT-4.1</span><span>Identify a need and write a design brief<small class=\"ds-cov-as\">Assessed in Redesign folio</small></span><span class=\"ds-cov-cell\"><i class=\"ds-k ds-k-ok\"></i>Developed <small>2</small></span><span class=\"ds-cov-cell\"><i class=\"ds-k ds-k-ok\"></i>Developed <small>2</small></span><i class=\"ds-chev\"></i></summary><p class=\"ds-cov-mean\"><strong>Taught: Developed.</strong> Reached in full, and developed or consolidated in some lesson.</p><div class=\"ds-cov-line\"><b>02</b><span><a href=\"#\">Writing a design brief</a> <em class=\"ds-cov-warn\">Taught, links from today’s plan</em> <small>In full, introduced</small></span></div></details><details class=\"ds-cov-row\"><summary><span class=\"ds-cov-id\">DT-4.3</span><span>Model and test a solution</span><span class=\"ds-cov-cell ds-cov-note\"><i class=\"ds-k ds-k-part\"></i>Only in part <small>1</small></span><span class=\"ds-cov-cell ds-cov-come\"><i class=\"ds-k ds-k-come\"></i>Still to come</span><i class=\"ds-chev\"></i></summary></details><details class=\"ds-cov-row\"><summary><span class=\"ds-cov-id\">DT-4.5</span><span>Explain how a product affects its users</span><span class=\"ds-cov-cell ds-cov-warn\"><i class=\"ds-k ds-k-none\"></i>Not reached</span><span class=\"ds-cov-cell ds-cov-warn\"><i class=\"ds-k ds-k-none\"></i>Not reached</span><i class=\"ds-chev\"></i></summary></details></div>",
+      "css": ".ds-cov { --house: #1e3bb3; --house-on: #fff; --house-soft: #e3e8fa; --house-deep: #142a85; font-family: Archivo, system-ui, sans-serif; color: #15171c; } .ds-cov-cols, .ds-cov-row summary { display: grid; grid-template-columns: 58px minmax(0, 1fr) 140px 140px 16px; gap: 4px 16px; align-items: baseline; } .ds-cov-cols { padding: 0 4px 6px; font-size: 12px; font-weight: 700; color: #5f636d; border-bottom: 2px solid #15171c; } .ds-cov-row { border-bottom: 1px solid #dcded6; } .ds-cov-row summary { padding: 12px 4px; cursor: pointer; list-style: none; font-size: 15px; transition: background-color 160ms; } .ds-cov-row summary::-webkit-details-marker { display: none; } .ds-cov-row summary:hover { background: color-mix(in oklab, var(--house-deep) 12%, #fcfcfa); } .ds-cov-row summary:focus-visible { outline: 2px solid var(--house-deep); outline-offset: -2px; } .ds-cov-id { font-size: 13px; font-weight: 800; color: var(--house-deep); } .ds-cov-cell { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 650; } .ds-cov-cell small { font-size: 12px; font-weight: 600; color: #5f636d; } .ds-cov-come { color: var(--house-deep); } .ds-k { display: inline-block; width: 10px; height: 10px; } .ds-k-ok { background: var(--house-deep); } .ds-k-part { background: linear-gradient(135deg, #6e4b03 50%, transparent 50%); outline: 1px solid #6e4b03; outline-offset: -1px; } .ds-k-none { width: 9px; height: 9px; background: #8a1f10; transform: rotate(45deg); } .ds-k-come { background: #fcfcfa; outline: 2px dashed var(--house-deep); outline-offset: -2px; } .ds-cov-line { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 2px 4px 14px 78px; font-size: 14px; } .ds-cov-line b { font-size: 24px; font-weight: 900; font-stretch: 70%; line-height: 0.85; color: var(--house-deep); } .ds-cov-line a { color: inherit; } .ds-cov-line small { font-size: 12px; color: #5f636d; } .ds-cov-line em { font-style: normal; font-size: 12px; font-weight: 650; } .ds-cov-warn { color: #8a1f10; } .ds-cov-note { color: #6e4b03; } .ds-cov-as { display: block; font-size: 12px; font-weight: 600; color: #5f636d; } .ds-cov-mean { margin: 0; padding: 2px 4px 6px 78px; font-size: 14px; color: #3a3d45; } .ds-cov-mean strong { color: #15171c; } .ds-chev { align-self: center; justify-self: end; width: 7px; height: 7px; border-right: 2px solid #5f636d; border-bottom: 2px solid #5f636d; transform: rotate(45deg); } .ds-cov-row[open] .ds-chev { transform: rotate(-135deg); }"
     }
   ],
   "narrative": {
     "northStar": "House Colours",
-    "overview": "Every class wears its house colour, and the colour is the navigation. A class's rail band, the page header and the lesson lanes all take the same flat colour, so the screen always says whose lesson you are in. It is a school-sports-carnival world: chalk ground, ink type, six flat house fields that own whole regions, and a run sheet drawn as a lane strip with a finish line. It refuses the neutral grey sidebar workspace with one blue accent.\n\nDensity is that of a working tool used between classes: a dark rail on the left, a house-coloured header band with the title at display size, then a chalk page of hairline-ruled lists. Rank comes from type scale, not boxes: heavy condensed Archivo numerals set huge (lesson numbers, minutes, terms) beside small regular labels. Corners are square. Depth is nearly absent; colour fields and rules do the separating.\n\nMotion has one job beyond ordinary state changes: when you move between classes, the new page header starts in the previous class's colour and fades to its own, so the colour visibly changes hands.",
+    "overview": "Every class wears its house colour, and the colour is the navigation. A class's rail band, the page header and the lesson lanes all take the same flat colour, so the screen always says whose lesson you are in. It is a school-sports-carnival world: chalk ground, ink type, eight flat house fields that own whole regions, and a run sheet drawn as a lane strip with a finish line. It refuses the neutral grey sidebar workspace with one blue accent.\n\nDensity is that of a working tool used between classes: a dark rail on the left, a house-coloured header band with the title at display size, then a chalk page of hairline-ruled lists. Rank comes from type scale, not boxes: heavy condensed Archivo numerals set huge (lesson numbers, minutes, terms) beside small regular labels. Corners are square. Depth is nearly absent; colour fields and rules do the separating.\n\nMotion has one job beyond ordinary state changes: when you move between classes, the new page header starts in the previous class's colour and fades to its own, so the colour visibly changes hands.",
     "keyCharacteristics": [
-      "Six flat house colours, one per class, each owning whole regions rather than chips.",
+      "Eight flat house colours, one per class, each owning whole regions rather than chips.",
       "Chalk ground, ink type, hairline rules; the dark rail is the only dark surface in light mode.",
       "Archivo variable, condensed and heavy for figures and titles, tabular numerals everywhere.",
       "Square corners (2px at most); flat surfaces, with one soft shadow reserved for raised panels.",
@@ -190,7 +214,7 @@
     ],
     "dos": [
       "Do give every class-scoped page `data-house` and read only `--house`, `--house-on`, `--house-soft` and `--house-deep` inside it.",
-      "Do assign houses by sorted offering path through `houseOf`, cycling cobalt, emerald, ruby, saffron, plum, lagoon.",
+      "Do assign houses through `houseMap` / `houseOf`: an offering's fixed `colour` first, then sorted offering path cycling cobalt, emerald, ruby, saffron, plum, lagoon, tangerine, moss.",
       "Do put identifiers (lesson number, start minute, term, syllabus id) in a fixed leading cell as a condensed figure or bold label.",
       "Do head every list with a 2px ink rule and divide rows with 1px rules.",
       "Do set figures in Archivo at 70–75% width and 900 weight, with tabular numerals.",

@@ -271,6 +271,25 @@ describe('Data.calendars and classDeliveries', () => {
 		expect(held[0].record.deliveries[0].taught).toBe('2030-02-04');
 	});
 
+	it('reads one class’s records for one unit, by path, and none for another subject', async () => {
+		const store = new MemoryStore(
+			new Map([
+				['offerings/2030_y8.json', dump({ id: '2030-y8', subject: 'subjects/sorting' })],
+				['offerings/2030_y9.json', dump({ id: '2030-y9', subject: 'subjects/other' })],
+				['offerings/2030_y8/taught/units/a/lessons/01.json', record('units/a/lessons/01.json')],
+				['offerings/2030_y8/taught/units/a/lessons/swap.json', record('units/a/lessons/swap.json')],
+				['offerings/2030_y8/taught/units/ab/lessons/01.json', record('units/ab/lessons/01.json')],
+				['offerings/2030_y9/taught/units/a/lessons/01.json', record('units/a/lessons/01.json')]
+			])
+		);
+		const data = new Data(store);
+		const held = await data.unitDeliveries('offerings/2030_y8.json', 'subjects/sorting/units/a');
+		expect(held.map((h) => h.ref)).toEqual(['lessons/01.json', 'lessons/swap.json']);
+		expect(await data.unitDeliveries('offerings/2030_y9.json', 'subjects/sorting/units/a')).toEqual(
+			[]
+		);
+	});
+
 	it('creates a new year’s calendar, then saves over it', async () => {
 		const store = new MemoryStore(new Map());
 		const data = new Data(store);

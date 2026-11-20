@@ -141,6 +141,26 @@ export function classRecordPaths(paths: Iterable<string>, offeringPath: string):
 	return found.sort();
 }
 
+/**
+ * The records one class holds for one unit's lessons, in path order, each
+ * with its lesson's ref relative to the unit. Found by path, not by the
+ * class's lesson list, so a lesson taught in place of a listed one counts.
+ * Empty for a unit outside `units/` and `revision/`. Whether the class
+ * teaches the unit's subject is the caller's to check.
+ */
+export function unitRecordPaths(
+	paths: Iterable<string>,
+	offeringPath: string,
+	unitDir: string
+): { path: string; ref: string }[] {
+	const unit = lessonRef(`${unitDir.replace(/\/+$/, '')}/`);
+	if (!unit) return [];
+	const prefix = `${classDir(offeringPath)}/taught/${unit.ref}`;
+	return classRecordPaths(paths, offeringPath)
+		.filter((path) => path.startsWith(prefix))
+		.map((path) => ({ path, ref: path.slice(prefix.length) }));
+}
+
 /** Where a feedback item is: which record file, which delivery, which item. */
 export interface ItemRef {
 	path: string;
