@@ -105,6 +105,11 @@ typography:
     fontWeight: 400
     lineHeight: 1.55
     fontFeature: "'tnum'"
+  control:
+    fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
+    fontSize: '14px'
+    fontWeight: 650
+    lineHeight: 1.3
   label:
     fontFamily: "Archivo, -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif"
     fontSize: '13px'
@@ -299,6 +304,7 @@ Dark mode (system preference unless `data-theme='light'`, or forced with `data-t
 - **Title** (750, 17–18px, 1.2, 88% width): lesson and unit names in lists and tiles.
 - **Title small** (800, 16px, 90% width): h3.
 - **Body** (400, 15px, 1.55): reading text; summaries at 17px, kept to 62–68ch.
+- **Control** (650, 14px): button and tab labels, table cells that carry a status in words (coverage flags), lines in an opened row.
 - **Label** (600–700, 13px): field labels, crumbs, header meta, counts.
 - **Micro** (600–800, 11–12px): lane segment labels, tick numbers, finish-line flag, term codes, offering ids in bands.
 
@@ -382,6 +388,32 @@ The run sheet drawn as a carnival lane: a 64px track on paper between two rule-s
 - **Ticks:** a minute scale beneath, minor ticks every 5 minutes and labelled major ticks every 15.
 - **Compact:** a 12px strip with no labels or ticks, used in the unit's lesson lanes.
 - Segments and the finish line slide (380ms) as timings are edited. A legend (talk, activity, stretch, finish) sits above the unit lanes.
+
+### Class Calendar
+
+A class's year on a month grid (`@event-calendar/core`, restyled through its `--ec-*` variables), under a 2px ink rule, weekdays only, weeks starting Monday.
+
+- **Taught:** a solid house field with house-on text, as a talk segment.
+- **Planned:** paper with a 2px dashed house outline inset and house-deep text, as a stretch segment.
+- **Not marked taught** (planned for a day already past): warn soft with a dashed warn outline.
+- **Days off and holidays:** sunk background on the day; a day off for some periods only is a 135° sunk hatch. Its name sits beside the day number in 11px muted.
+- **Term weeks:** the week's label (`T1 W3`, with `A` or `B` for a fortnightly class) in 11px house-deep at the start of each row.
+- Each lesson shows its period in bold and its number and name, and links to the lesson in the class's order. Square corners, no shadows. Lessons not marked taught, lessons past their unit's end date and lessons with no period left are listed under the grid as ruled rows led by the date.
+
+### Coverage Table
+
+A unit's dot points as a ruled table per registry phase, capped at 1040px so the flags sit near the words they judge. Above the first table: a toolbar ("Only rows worth a second look" with its count, then Open all and Close all), and a ruled Key disclosure whose summary is the legend in real text and which opens on each flag's meaning.
+
+- **Phase head:** a Headline phase name and a muted count in words, "2 of 4 reached so far · 1 not reached · 2 worth a second look", the not-reached part in warn-deep.
+- **Column row:** 12px muted over a 2px ink rule; hidden from screen readers, since each cell carries its own label.
+- **Leading cell:** the syllabus id, 13px bold house-deep, in the 58px column. Under the dot point's text, "Assessed in …" in 12px muted names the tasks that link it.
+- **Planned and Taught cells:** a hidden "Planned:" or "Taught:" label, a 10px key and a 14px bold label in words ("Developed", "Once", "Never developed", "Only in part", "Not reached", "Not written yet", "Another unit"), then the lesson count in 12px muted, left out at zero. Never a chip. Not reached reads in warn-deep, only in part and never developed in note-deep, not written yet and another unit in muted.
+- **Only lessons count.** A task assesses a point and doesn't teach it, so flags, counts and "reached" read lesson links only, and tasks are listed apart.
+- **Keys**, all in house-deep so a light house clears 3:1: solid for developed; a solid outline for once; a dashed outline for never developed; a half-filled note-deep square for only in part; a warn-deep diamond for not reached; paper with a dashed muted outline for not written yet; a rule-strong square for another unit. Not written yet and another unit appear in the Key only where a row has them.
+- **Still to come:** the Planned key from the calendar (paper with a dashed house-deep outline) and house-deep text, in place of the Taught flag.
+- Each row is a `<details>` with a muted chevron in the last column, a 12% house-deep hover and an inset focus ring. Open, it states each flag's meaning in words ("**Planned: Once.** One lesson reaches this in full…"), warns in warn-deep where a task assesses a point no lesson teaches (or has taught yet), then lists the links: the lesson number in a 24px condensed house-deep figure, the linked title sized to its text, the 12px bold status straight after it ("Taught", "Not yet taught", "Assessment", in warn-deep where the links come from today's plan or the lesson was taught without the link), then "In full, developed" in 12px muted. Tasks come next, then any lesson in the unit's `planned` that names the point, titled, with "Planned, not written yet" and no link.
+- A class tab adds the class's year where two tabs share a name ("Year 7 Class A · 2025 · Term 2").
+- Below 720px the column row hides, each cell stacks under the text with its "Planned" or "Taught" label shown, and the opened row stays aligned with the text column.
 
 ### Feedback Entries
 

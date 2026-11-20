@@ -4,7 +4,14 @@ import { byNumber, houseMap, termParts } from '../house.ts';
 import { dump } from './format.ts';
 import { oneOffDirs } from './layout.ts';
 import { EditError } from './lessonEdit.ts';
-import { fromClassDraft, newEntry, newOneOff, toClassDraft, withColour } from './offeringEdit.ts';
+import {
+	fromClassDraft,
+	newEntry,
+	newOneOff,
+	setSlot,
+	toClassDraft,
+	withColour
+} from './offeringEdit.ts';
 import type { Offering } from './types.ts';
 
 const offering = (): Offering =>
@@ -163,6 +170,50 @@ describe('class editing', () => {
 		expect(next.canvas).toEqual(original.canvas);
 		expect(next.colour).toBe('ruby');
 		expect(next.year_group).toBe('Year 8');
+	});
+});
+
+describe('timetable editing', () => {
+	const periods = ['P1', 'P2', 'P3'];
+
+	it('adds a timetable at its schema place, in day and period order', () => {
+		const draft = toClassDraft(offering());
+		draft.timetable = setSlot(draft.timetable, 'Thu', 'P1', 'A', periods);
+		draft.timetable = setSlot(draft.timetable, 'Mon', 'P3', '', periods);
+		draft.timetable = setSlot(draft.timetable, 'Mon', 'P1', 'B', periods);
+		const next = fromClassDraft(offering(), draft);
+		expect(Object.keys(next).indexOf('timetable')).toBe(Object.keys(next).indexOf('units') - 1);
+		expect(next.timetable).toEqual([
+			{ day: 'Mon', period: 'P1', week: 'B' },
+			{ day: 'Mon', period: 'P3' },
+			{ day: 'Thu', period: 'P1', week: 'A' }
+		]);
+	});
+
+	it('keeps a slot’s own keys and a file’s “both”, and drops a slot set to none', () => {
+		const original: Offering = {
+			...offering(),
+			timetable: [
+				{ period: 'P2', day: 'Tue', week: 'both', room: '12' },
+				{ day: 'Wed', period: 'P1' }
+			]
+		};
+		expect(dump(fromClassDraft(original, toClassDraft(original)))).toBe(dump(original));
+		const draft = toClassDraft(original);
+		draft.timetable = setSlot(draft.timetable, 'Wed', 'P1', null, periods);
+		draft.timetable = setSlot(draft.timetable, 'Tue', 'P2', 'B', periods);
+		expect(fromClassDraft(original, draft).timetable).toEqual([
+			{ period: 'P2', day: 'Tue', week: 'B', room: '12' }
+		]);
+	});
+
+	it('removes an emptied timetable, unless the file held it empty', () => {
+		const original: Offering = { ...offering(), timetable: [{ day: 'Mon', period: 'P1' }] };
+		const draft = toClassDraft(original);
+		draft.timetable = [];
+		expect('timetable' in fromClassDraft(original, draft)).toBe(false);
+		const empty: Offering = { ...offering(), timetable: [] };
+		expect(fromClassDraft(empty, toClassDraft(empty)).timetable).toEqual([]);
 	});
 });
 

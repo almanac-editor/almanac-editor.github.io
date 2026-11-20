@@ -34,7 +34,7 @@ which is the wrong place.
 src/lib/domain/   plain TypeScript, no Svelte, unit-tested
   store.ts        Store: what the app needs from wherever the files live
   repo.ts         the only code that talks to GitHub (trees, blobs, contents PUT)
-  folder.ts       FolderStore: a local folder (subjects/, offerings/, schemas/)
+  folder.ts       FolderStore: a local folder (subjects/, offerings/, schemas/, calendar/)
   format.ts       dump(): the house JSON format
   lessonEdit.ts   toDraft / fromDraft: editing without disturbing the file
   offerings.ts    port of the data repo's scripts/offering_lessons.py
@@ -48,7 +48,10 @@ src/lib/domain/   plain TypeScript, no Svelte, unit-tested
   newUnit.ts      a new unit, and a new subject: where they go, what they hold
   unitEdit.ts     a unit's own fields and dot points; a subject's outcome.json
   tasks.ts        a unit's assessment tasks: which a class sat, and editing them
-  layout.ts       where units, offerings, schemas and content files are
+  coverage.ts     a unit's dot points against its lessons: planned, and as taught
+  schedule.ts     a class's calendar: term weeks, its periods, when each lesson falls
+  calendarEdit.ts the school calendar editor's draft (calendar/<year>.json)
+  layout.ts       where units, offerings, calendars, schemas and content files are
   validate.ts     the data repo's own schemas/*.schema.json, at run time
   starter.ts      starter schemas, written into a folder that starts empty
 src/lib/data.ts   per-sign-in cache over Repo
@@ -86,14 +89,24 @@ src/lib/components/, src/routes/   UI
   starter schemas with its first unit. Files that already hold plans but no
   `schemas/` save unchecked; the app never adds schemas to them. The starter
   schemas must never be stricter than a real repo's (a `DATA_REPO` test checks).
-- **Duplicated logic.** `offerings.ts`, `tasks.ts` (`tasksForOffering`) and
-  `deliveries.ts` duplicate Python in the data repo (`offering_lessons.py`,
-  `deliveries.py`). The `DATA_REPO`
-  parity tests compare them; keep them passing.
+- **Duplicated logic.** `offerings.ts`, `tasks.ts` (`tasksForOffering`),
+  `deliveries.ts` and `coverage.ts` (`gather`, `agreedLessons`, `classify`) duplicate Python in
+  the data repo (`offering_lessons.py`, `deliveries.py`, `coverage_report.py`,
+  whose `gather_planned` is `agreedLessons`).
+  The `DATA_REPO` parity tests compare them; keep them passing. Coverage as
+  taught, from delivery records, has no Python counterpart.
 - **Feedback lives on delivery records**
   (`offerings/<class>/taught/<lesson path>.json`), never on the lesson. Items
   are applied or declined, never deleted. Read a lesson's records on demand,
-  never every record on every page.
+  never every record on every page. The one exception is a class's calendar
+  page, which reads that one class's records (`Data.classDeliveries`). A
+  unit's coverage page reads one class's records for that unit only
+  (`Data.unitDeliveries`).
+- **Planned dates are worked out, never saved.** The school calendar
+  (`calendar/<year>.json`: periods, terms, days off) and an offering's
+  `timetable` give a class its periods; `schedule.ts` puts taught lessons on
+  their taught dates and plans the rest on from the last one. Nothing per
+  lesson is written. Neither file is read by the data repo's Python.
 
 ## Security
 
@@ -104,8 +117,12 @@ src/lib/components/, src/routes/   UI
   - Never logged, never put in a URL, only sent to `api.github.com`.
 - **The CSP** (in `vite.config.ts`) limits `connect-src` to `api.github.com`.
   No third-party scripts at run time. Never `{@html}` on data.
-- **Dependencies:** pinned exactly (`save-exact=true` in `.npmrc`). Runtime
-  dependencies are Svelte and the validator only.
+- **Dependencies:** `package.json` holds `^` ranges, and `package-lock.json`
+  pins what installs. New packages are added exact (`save-exact=true` in
+  `.npmrc`), but older ranges stay as they are. Runtime
+  dependencies are Svelte, the validator and `@event-calendar/core` (the
+  calendar's month grid; MIT, depends on Svelte alone, bundled, so the CSP is
+  unchanged).
 - **The origin:** every Pages site on an account shares `<owner>.github.io`
   storage and folder access. The app is the only Pages site of the
   `almanac-editor` org (repo `almanac-editor/almanac-editor.github.io`,

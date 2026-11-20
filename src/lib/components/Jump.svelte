@@ -2,7 +2,7 @@
 	import type { House } from '#lib/house.ts';
 
 	export interface JumpItem {
-		kind: 'Class' | 'Unit' | 'Lesson';
+		kind: 'Class' | 'Calendar' | 'Unit' | 'Lesson';
 		label: string;
 		sub: string;
 		href: string;

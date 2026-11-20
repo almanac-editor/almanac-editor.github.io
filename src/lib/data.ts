@@ -8,16 +8,19 @@
 import type { Schema } from '@cfworker/json-schema';
 import { assessmentNames, assessmentPath, type AssessmentSpec } from './domain/assessments.ts';
 import {
+	classRecordPaths,
 	deliveryPath,
 	keepPlan,
 	keptStamp,
 	lessonRef,
 	newDelivery,
 	offeringLessons,
+	plansAtRisk,
 	plansToKeep,
 	recordPaths,
 	resolveFeedback,
 	today,
+	unitRecordPaths,
 	withDelivery,
 	withMaterials,
 	type DeliveryRecord,
@@ -27,6 +30,8 @@ import {
 	type ToKeep
 } from './domain/deliveries.ts';
 import {
+	calendarPath,
+	calendarPaths,
 	contentPath,
 	offeringPaths,
 	oneOffDirs,
@@ -43,7 +48,7 @@ import { offeringPath } from './domain/newOffering.ts';
 import { byNumber } from './house.ts';
 import { ConflictError, type Loaded } from './domain/repo.ts';
 import type { Store, Write } from './domain/store.ts';
-import type { Lesson, Offering, Unit } from './domain/types.ts';
+import type { Lesson, Offering, SchoolCalendar, Unit } from './domain/types.ts';
 import type { OutcomeSet } from './domain/unitEdit.ts';
 import { describeProblems } from './domain/fieldNames.ts';
 import { Schemas, type Problem } from './domain/validate.ts';
@@ -67,6 +72,7 @@ export class Data {
 	private unitsPromise: Promise<UnitEntry[]> | null = null;
 	private offeringsPromise: Promise<[string, Offering][]> | null = null;
 	private schemasPromise: Promise<Schemas> | null = null;
+	private calendarsPromise: Promise<Map<string, Loaded<SchoolCalendar>>> | null = null;
 
 	constructor(readonly store: Store) {}
 
@@ -118,26 +124,101 @@ export class Data {
 		if (!keeping.length) {
 			await this.store.createJson(path, doc, `Add class ${doc.id}`);
 		} else {
-			const commit = await this.store.head();
-			const stamp = keptStamp(today(), doc.id, commit);
-			const writes: Write[] = [{ path, doc, sha: null }];
-			for (const k of keeping) {
-				const lesson = (await this.lesson(join(k.offering.subject, k.ref))).doc;
-				const held = (await this.store.has(k.recordPath))
-					? await this.store.readJson<DeliveryRecord>(k.recordPath)
-					: null;
-				const record = keepPlan(held?.doc ?? null, k.offering.id, k.ref, lesson, commit, stamp);
-				await this.check('delivery.schema.json', record);
-				writes.push({ path: k.recordPath, doc: record, sha: held?.sha ?? null });
-			}
-			const n = keeping.length;
+			const kept = await this.keptWrites(
+				keeping,
+				`when ${doc.id} was created`,
+				async (k) => (await this.lesson(join(k.offering.subject, k.ref))).doc
+			);
 			await this.store.writeMany(
-				writes,
-				`Add class ${doc.id}, keeping ${n} plan${n === 1 ? '' : 's'} from earlier classes`
+				[{ path, doc, sha: null }, ...kept],
+				`Add class ${doc.id}, keeping ${plans(keeping.length)} from earlier classes`
 			);
 		}
 		this.offeringsPromise = null;
 		return path;
+	}
+
+	/**
+	 * Saves a lesson. With `keep`, the earlier classes' plans go in the same
+	 * commit, kept as `before`, the lesson as it was loaded, which is what those
+	 * classes had. Returns the lesson's new version id. Throws ConflictError if
+	 * the lesson or a record changed since it was read.
+	 */
+	async saveLesson(
+		path: string,
+		next: Lesson,
+		sha: string,
+		message: string,
+		keep: ToKeep[] = [],
+		before: Lesson | null = null
+	): Promise<string> {
+		const keeping = before ? keep.filter((k) => k.outcome !== 'several') : [];
+		if (!keeping.length) return this.store.writeJson(path, next, sha, message);
+		const kept = await this.keptWrites(
+			keeping,
+			'before the lesson was edited',
+			async () => before as Lesson
+		);
+		await this.store.writeMany(
+			[{ path, doc: next, sha }, ...kept],
+			`${message}, keeping ${plans(keeping.length)} from earlier classes`
+		);
+		return (await this.store.readText(path)).sha;
+	}
+
+	/** The earlier classes' records with each plan kept, ready to write together. */
+	private async keptWrites(
+		keeping: ToKeep[],
+		why: string,
+		planOf: (k: ToKeep) => Promise<Lesson>
+	): Promise<Write[]> {
+		const commit = await this.store.head();
+		const stamp = keptStamp(today(), why, commit);
+		const writes: Write[] = [];
+		for (const k of keeping) {
+			const held = (await this.store.has(k.recordPath))
+				? await this.store.readJson<DeliveryRecord>(k.recordPath)
+				: null;
+			const record = keepPlan(
+				held?.doc ?? null,
+				k.offering.id,
+				k.ref,
+				await planOf(k),
+				commit,
+				stamp
+			);
+			await this.check('delivery.schema.json', record);
+			writes.push({ path: k.recordPath, doc: record, sha: held?.sha ?? null });
+		}
+		return writes;
+	}
+
+	/**
+	 * The plans saving this lesson would put at risk: earlier classes that took
+	 * it with no plan kept, while a later year's class takes it too.
+	 */
+	async plansAtRisk(lessonPath: string): Promise<ToKeep[]> {
+		const at = lessonRef(lessonPath);
+		if (!at) return [];
+		const [paths, offerings] = await Promise.all([this.store.paths(), this.offerings()]);
+		const subject = normalise(at.subject);
+		const classes = await Promise.all(
+			offerings
+				.filter(([, o]) => normalise(o.subject ?? '') === subject)
+				.map(async ([path, offering]) => ({
+					path,
+					offering,
+					lessons: await this.lessonsOf(offering)
+				}))
+		);
+		const records = new Map<string, DeliveryRecord>();
+		await Promise.all(
+			classes
+				.map((c) => deliveryPath(c.path, at.ref))
+				.filter((p) => paths.has(p))
+				.map(async (p) => records.set(p, (await this.store.readJson<DeliveryRecord>(p)).doc))
+		);
+		return plansAtRisk(at.ref, classes, records);
 	}
 
 	/**
@@ -369,6 +450,74 @@ export class Data {
 		return (await this.store.readText(path)).doc;
 	}
 
+	/** The school calendars, `calendar/<year>.json`, by path, each with its version. */
+	calendars(): Promise<Map<string, Loaded<SchoolCalendar>>> {
+		this.calendarsPromise ??= this.store
+			.paths()
+			.then(
+				async (paths) =>
+					new Map(
+						await Promise.all(
+							calendarPaths(paths.keys()).map(
+								async (path) => [path, await this.store.readJson<SchoolCalendar>(path)] as const
+							)
+						)
+					)
+			);
+		return this.calendarsPromise;
+	}
+
+	/**
+	 * Saves a year's school calendar: over the version `sha` names, or as a
+	 * new file when `sha` is null. Returns the new version id. Throws
+	 * ConflictError if the file changed since it was read (or appeared
+	 * meanwhile), and an Error listing the problems if the schema refuses it.
+	 */
+	async saveCalendar(doc: SchoolCalendar, sha: string | null, message: string): Promise<string> {
+		await this.check('calendar.schema.json', doc);
+		const path = calendarPath(doc.year);
+		const next = sha
+			? await this.store.writeJson(path, doc, sha, message)
+			: await this.store.createJson(path, doc, message);
+		this.calendarsPromise = null;
+		return next;
+	}
+
+	/**
+	 * Every delivery record one class holds, read on demand for the one page
+	 * that shows the whole class's year (the calendar).
+	 */
+	async classDeliveries(offeringPath: string): Promise<{ path: string; record: DeliveryRecord }[]> {
+		const paths = classRecordPaths((await this.store.paths()).keys(), offeringPath);
+		return Promise.all(
+			paths.map(async (path) => ({
+				path,
+				record: (await this.store.readJson<DeliveryRecord>(path)).doc
+			}))
+		);
+	}
+
+	/**
+	 * One class's records for one unit's lessons, each with its lesson's ref
+	 * relative to the unit, for the unit's coverage page. Empty when the class
+	 * teaches another subject.
+	 */
+	async unitDeliveries(
+		offeringPath: string,
+		unitDir: string
+	): Promise<{ ref: string; record: DeliveryRecord }[]> {
+		const [paths, offering] = await Promise.all([this.store.paths(), this.offering(offeringPath)]);
+		const subject = lessonRef(`${unitDir}/`)?.subject;
+		if (subject === undefined || normalise(offering.subject ?? '') !== normalise(subject))
+			return [];
+		return Promise.all(
+			unitRecordPaths(paths.keys(), offeringPath, unitDir).map(async ({ path, ref }) => ({
+				ref,
+				record: (await this.store.readJson<DeliveryRecord>(path)).doc
+			}))
+		);
+	}
+
 	/** The subject's one-off lessons, as `one_offs/<name>` relative to the subject. */
 	async oneOffs(subject: string): Promise<string[]> {
 		return oneOffDirs((await this.store.paths()).keys(), subject);
@@ -496,4 +645,9 @@ export class Data {
 /** An Error that lists a schema's problems in plain words, one sentence each. */
 function problemError(schema: string, problems: Problem[]): Error {
 	return new Error(describeProblems(schema, problems).join(' '));
+}
+
+/** "1 plan", "3 plans". */
+function plans(n: number): string {
+	return `${n} plan${n === 1 ? '' : 's'}`;
 }

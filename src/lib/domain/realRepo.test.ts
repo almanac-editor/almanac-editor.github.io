@@ -6,15 +6,18 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { readdirSync, readFileSync, statSync } from 'node:fs';
+import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join as joinFs, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { fromCalendarDraft, toCalendarDraft } from './calendarEdit.ts';
+import { agreedLessons, classify, gather, lessonSources } from './coverage.ts';
 import {
 	deliveryPath,
 	feedbackEntries,
 	keepOutcome,
 	lessonRef,
 	offeringLessons,
+	plansAtRisk,
 	plansToKeep,
 	recordPaths,
 	type DeliveryRecord
@@ -41,8 +44,9 @@ import {
 	type OutcomeSet
 } from './unitEdit.ts';
 import { lessonsForOffering } from './offerings.ts';
+import { join as joinPath } from './paths.ts';
 import { fromTaskDrafts, tasksForOffering, toTaskDrafts } from './tasks.ts';
-import type { Lesson, Offering, Unit } from './types.ts';
+import type { Lesson, Offering, SchoolCalendar, Unit } from './types.ts';
 import { Schemas } from './validate.ts';
 
 const root = process.env.DATA_REPO;
@@ -67,6 +71,11 @@ describe.skipIf(!root)('real data repo', () => {
 	const lessons = files.filter((f) => /^subjects\/.*\/lessons\/.*\.json$/.test(f));
 	const records = files.filter((f) => /^offerings\/[^/]+\/taught\//.test(f));
 	const offerings = files.filter((f) => /^offerings\/[^/]+\.json$/.test(f));
+	const calendars = existsSync(joinFs(repo, 'calendar'))
+		? readdirSync(joinFs(repo, 'calendar'))
+				.filter((f) => /^\d{4}\.json$/.test(f))
+				.map((f) => `calendar/${f}`)
+		: [];
 	const schemas = new Schemas(
 		Object.fromEntries(
 			readdirSync(joinFs(repo, 'schemas'))
@@ -102,9 +111,14 @@ describe.skipIf(!root)('real data repo', () => {
 				const before = read(f).split('\n');
 				const after = dump(withLesson(unit, ref)).split('\n');
 				const added = after.filter((line) => !before.includes(line));
+				// An empty `"lessons": []` opens onto its own lines, so the first plan adds two.
+				const empty = !unit.lessons?.length;
 				const ok =
-					after.length === before.length + 1 &&
-					added.every((line) => line.includes('"lessons/')) &&
+					after.length === before.length + (empty ? 2 : 1) &&
+					added.every(
+						(line) =>
+							line.includes('"lessons/') || (empty && /^\s*("lessons": \[|\],?)$/.test(line))
+					) &&
 					!files.includes(`${dir}/${ref}`) &&
 					schemas.validate('unit.schema.json', withLesson(unit, ref)).length === 0;
 				return ok ? [] : [`${f} ${ref}`];
@@ -133,11 +147,24 @@ describe.skipIf(!root)('real data repo', () => {
 			...offerings.map((f) => [f, 'offering.schema.json'] as const),
 			...files
 				.filter((f) => f.endsWith('/outcome.json'))
-				.map((f) => [f, 'outcome.schema.json'] as const)
+				.map((f) => [f, 'outcome.schema.json'] as const),
+			...calendars.map((f) => [f, 'calendar.schema.json'] as const)
 		]
 			.map(([f, name]) => [f, starter.validate(name, JSON.parse(read(f)))] as const)
 			.filter(([, problems]) => problems.length > 0);
 		expect(invalid).toEqual([]);
+	});
+
+	it('saves every untouched school calendar as the same bytes, valid', () => {
+		const bad = calendars.flatMap((f) => {
+			const calendar: SchoolCalendar = JSON.parse(read(f));
+			const next = fromCalendarDraft(calendar, toCalendarDraft(calendar));
+			const problems = schemas.has('calendar.schema.json')
+				? schemas.validate('calendar.schema.json', next)
+				: [];
+			return dump(next) === read(f) && problems.length === 0 ? [] : [f];
+		});
+		expect(bad).toEqual([]);
 	});
 
 	it('saves every untouched unit and outcome draft as the same bytes', () => {
@@ -282,6 +309,13 @@ print(json.dumps(missing_plans()))
 			for (const k of plansToKeep(next, classes, held)) actual.add(`${k.offering.id}  ${k.ref}`);
 		}
 		expect([...actual].sort()).toEqual([...new Set(expected)].sort());
+		// Lesson by lesson, as the editor asks on saving one, the same plans are at risk.
+		const byLesson = new Set(
+			[...new Set(classes.flatMap((c) => c.lessons.map((l) => l.ref)))].flatMap((ref) =>
+				plansAtRisk(ref, classes, held).map((k) => `${k.offering.id}  ${k.ref}`)
+			)
+		);
+		expect([...byLesson].sort()).toEqual([...actual].sort());
 	});
 
 	it('lists open feedback as scripts/deliveries.py does', () => {
@@ -377,6 +411,61 @@ print(json.dumps(out))
 			const unit: Unit = JSON.parse(read(`${unitDir}/unit.json`));
 			const offering: Offering = JSON.parse(read(path));
 			actual[key] = lessonsForOffering(unitDir, unit, offering, term === 'None' ? null : term);
+		}
+		expect(actual).toEqual(expected);
+	});
+
+	it('flags each unit’s coverage as gather and classify in coverage_report.py do', () => {
+		const python = `
+import json, sys
+from pathlib import Path
+sys.path.insert(0, "scripts")
+from coverage_report import classify, gather, gather_planned
+from offering_lessons import lessons_for_offering
+def report(unit_dir, refs=None, oid=None, term=None):
+    registry, links, dangling = gather(unit_dir, refs, oid, term)
+    planned, planned_dangling = gather_planned(unit_dir, registry)
+    flags = classify(registry, links, planned)
+    return {"flags": {f: [rid for rid, _, _ in rows] for f, rows in flags.items()}, "dangling": dangling + planned_dangling}
+out = {}
+for u in sorted(Path("subjects").rglob("unit.json")):
+    out[f"{u.parent.as_posix()}|None|None"] = report(u.parent)
+for o in sorted(Path("offerings").glob("*.json")):
+    offering = json.loads(o.read_text(encoding="utf-8"))
+    for entry in offering["units"]:
+        unit_dir = Path(offering["subject"]) / entry["unit"]
+        for term in (None, entry.get("term")):
+            refs = lessons_for_offering(unit_dir, o, term)
+            out[f"{unit_dir.as_posix()}|{o.as_posix()}|{term}"] = report(unit_dir, refs, offering["id"], term)
+print(json.dumps(out))
+`;
+		const expected: Record<string, unknown> = JSON.parse(
+			execFileSync('python3', ['-c', python], { cwd: repo, encoding: 'utf-8' })
+		);
+		const actual: Record<string, unknown> = {};
+		for (const key of Object.keys(expected)) {
+			const [unitDir, path, t] = key.split('|');
+			const term = t === 'None' ? null : t;
+			const unit: Unit = JSON.parse(read(`${unitDir}/unit.json`));
+			const offering: Offering | null = path === 'None' ? null : JSON.parse(read(path));
+			const refs = offering
+				? lessonsForOffering(unitDir, unit, offering, term)
+				: (unit.lessons ?? []);
+			const lessons = refs.map((ref) => {
+				const at = joinPath(unitDir, ref);
+				return { ref, lesson: files.includes(at) ? (JSON.parse(read(at)) as Lesson) : null };
+			});
+			const registry = unit.syllabus_registry ?? [];
+			const gathered = gather(
+				registry,
+				lessonSources(lessons),
+				tasksForOffering(unit, offering?.id ?? null, term)
+			);
+			const agreed = agreedLessons(unit, registry);
+			actual[key] = {
+				flags: classify(registry, gathered, agreed),
+				dangling: [...gathered.dangling, ...agreed.dangling]
+			};
 		}
 		expect(actual).toEqual(expected);
 	});

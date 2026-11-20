@@ -131,6 +131,36 @@ export function recordPaths(
 	return found.sort((a, b) => (a.path < b.path ? -1 : a.path > b.path ? 1 : 0));
 }
 
+/** Every record one class holds, under its `taught/`, in path order. */
+export function classRecordPaths(paths: Iterable<string>, offeringPath: string): string[] {
+	const prefix = `${classDir(offeringPath)}/taught/`;
+	const found: string[] = [];
+	for (const path of paths) {
+		if (path.startsWith(prefix) && path.endsWith('.json')) found.push(path);
+	}
+	return found.sort();
+}
+
+/**
+ * The records one class holds for one unit's lessons, in path order, each
+ * with its lesson's ref relative to the unit. Found by path, not by the
+ * class's lesson list, so a lesson taught in place of a listed one counts.
+ * Empty for a unit outside `units/` and `revision/`. Whether the class
+ * teaches the unit's subject is the caller's to check.
+ */
+export function unitRecordPaths(
+	paths: Iterable<string>,
+	offeringPath: string,
+	unitDir: string
+): { path: string; ref: string }[] {
+	const unit = lessonRef(`${unitDir.replace(/\/+$/, '')}/`);
+	if (!unit) return [];
+	const prefix = `${classDir(offeringPath)}/taught/${unit.ref}`;
+	return classRecordPaths(paths, offeringPath)
+		.filter((path) => path.startsWith(prefix))
+		.map((path) => ({ path, ref: path.slice(prefix.length) }));
+}
+
 /** Where a feedback item is: which record file, which delivery, which item. */
 export interface ItemRef {
 	path: string;
@@ -271,9 +301,33 @@ export function plansToKeep(
 	return found;
 }
 
-/** The `source` a kept plan carries: who kept it, when, why, and from which commit. */
-export function keptStamp(date: string, forClass: string, commit: string | null): string {
-	return `plan kept by almanac-editor on ${date}, when ${forClass} was created${commit ? `, from ${commit.slice(0, 7)}` : ''}`;
+/**
+ * The `source` a kept plan carries: who kept it, when, why, and from which
+ * commit. `why` reads on from the date: "when 2027-y7-a was created".
+ */
+export function keptStamp(date: string, why: string, commit: string | null): string {
+	return `plan kept by almanac-editor on ${date}, ${why}${commit ? `, from ${commit.slice(0, 7)}` : ''}`;
+}
+
+/**
+ * The plans one lesson puts at risk: every earlier class that took it with no
+ * plan kept, while a later year's class of the same subject takes it too. The
+ * rule of `missing_plans` in `deliveries.py`, for one lesson.
+ */
+export function plansAtRisk(
+	ref: string,
+	classes: { path: string; offering: Offering; lessons: TakenLesson[] }[],
+	records: Map<string, DeliveryRecord>
+): ToKeep[] {
+	const found: ToKeep[] = [];
+	for (const later of classes) {
+		const taken = later.lessons.find((l) => l.ref === ref);
+		if (!taken) continue;
+		for (const k of plansToKeep({ offering: later.offering, lessons: [taken] }, classes, records)) {
+			if (!found.some((f) => f.recordPath === k.recordPath)) found.push(k);
+		}
+	}
+	return found;
 }
 
 /**

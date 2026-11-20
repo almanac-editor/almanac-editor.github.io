@@ -32,7 +32,8 @@ export interface FolderHandle {
 }
 
 /** The folders the app reads; everything else in the folder is left alone. */
-export const ROOTS = ['subjects', 'offerings', 'schemas'];
+/** The folders the app reads. `calendar/` holds the school calendars, `calendar/<year>.json`. */
+export const ROOTS = ['subjects', 'offerings', 'schemas', 'calendar'];
 
 export async function digest(text: string): Promise<string> {
 	const bytes = await crypto.subtle.digest('SHA-256', new TextEncoder().encode(text));

@@ -28,6 +28,7 @@
 	let { children } = $props();
 
 	const onSettings = $derived(page.url.pathname.endsWith('/settings'));
+	const onCalendar = $derived(page.url.pathname.endsWith('/calendar'));
 	const o = $derived(page.url.searchParams.get('o'));
 	const u = $derived(page.url.searchParams.get('u'));
 
@@ -90,6 +91,13 @@
 				href: first
 					? links.unit(join(offering.subject, first.unit), path, first.term)
 					: links.home(),
+				house: h
+			});
+			items.push({
+				kind: 'Calendar',
+				label: `${className(offering)} calendar`,
+				sub: `${offering.id} · taught and planned lessons`,
+				href: links.calendar(path),
 				house: h
 			});
 			for (const entry of offering.units) {
@@ -226,6 +234,12 @@
 												</a>
 											</li>
 										{/each}
+										<li>
+											<a href={links.calendar(path)} aria-current={onCalendar ? 'page' : undefined}>
+												<span class="term"><Icon name="calendar" size={14} /></span>
+												<span>Calendar</span>
+											</a>
+										</li>
 									</ul>
 								{/if}
 							</li>

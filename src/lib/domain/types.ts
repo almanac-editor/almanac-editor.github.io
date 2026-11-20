@@ -80,12 +80,25 @@ export interface Unit {
 	/** Outcome codes from the subject's `outcome.json`. */
 	applicable_outcomes?: string[];
 	lessons?: string[];
+	/** Lessons agreed but not yet written, in teaching order, after those in `lessons`. */
+	planned?: PlannedLesson[];
+	[key: string]: unknown;
+}
+
+/** One entry in a unit's `planned`: a lesson agreed before its plan exists. */
+export interface PlannedLesson {
+	title: string;
+	/** Registry ids the lesson is meant to reach; never counted as taught. */
+	ids?: string[];
+	note?: string;
 	[key: string]: unknown;
 }
 
 export interface OfferingUnit {
 	unit: string;
 	term?: string;
+	start_date?: string;
+	end_date?: string;
 	lessons?: string[];
 	duration_weeks?: number;
 	notes?: string;
@@ -101,8 +114,53 @@ export interface Offering {
 	colour?: string;
 	mode?: string;
 	subject: string;
+	/** The periods the class has each week; see `calendar/<year>.json`. */
+	timetable?: TimetableSlot[];
 	units: OfferingUnit[];
 	/** The class's folder in cloud storage, an `https:` link. */
 	folder?: string;
+	[key: string]: unknown;
+}
+
+export type Weekday = 'Mon' | 'Tue' | 'Wed' | 'Thu' | 'Fri';
+
+/** One period a class has each week, or each Week A or Week B of a fortnight. */
+export interface TimetableSlot {
+	day: Weekday;
+	/** A period id from the calendar, e.g. `P3`. */
+	period: string;
+	/** Omitted means every week. */
+	week?: 'A' | 'B' | 'both';
+	[key: string]: unknown;
+}
+
+/** One school year's teaching days: `calendar/<year>.json`. Dates are `YYYY-MM-DD`. */
+export interface SchoolCalendar {
+	year: number;
+	periods: { id: string; name?: string; start?: string; end?: string; [key: string]: unknown }[];
+	terms: Term[];
+	days_off?: DayOff[];
+	[key: string]: unknown;
+}
+
+export interface Term {
+	name: string;
+	start: string;
+	/** Inclusive. */
+	end: string;
+	first_week?: 'A' | 'B';
+	[key: string]: unknown;
+}
+
+/** Days or periods in a term without normal lessons. */
+export interface DayOff {
+	title: string;
+	start: string;
+	/** Inclusive; omitted means the one day. */
+	end?: string;
+	/** Omitted means the whole day. */
+	periods?: string[];
+	/** As an offering's `year_group` writes them; omitted means every year group. */
+	year_groups?: string[];
 	[key: string]: unknown;
 }
