@@ -10,7 +10,7 @@ import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
 import { join as joinFs, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { fromCalendarDraft, toCalendarDraft } from './calendarEdit.ts';
-import { classify, gather, lessonSources } from './coverage.ts';
+import { agreedLessons, classify, gather, lessonSources } from './coverage.ts';
 import {
 	deliveryPath,
 	feedbackEntries,
@@ -413,12 +413,13 @@ print(json.dumps(out))
 import json, sys
 from pathlib import Path
 sys.path.insert(0, "scripts")
-from coverage_report import classify, gather
+from coverage_report import classify, gather, gather_planned
 from offering_lessons import lessons_for_offering
 def report(unit_dir, refs=None, oid=None, term=None):
     registry, links, dangling = gather(unit_dir, refs, oid, term)
-    flags = classify(registry, links)
-    return {"flags": {f: [rid for rid, _, _ in rows] for f, rows in flags.items()}, "dangling": dangling}
+    planned, planned_dangling = gather_planned(unit_dir, registry)
+    flags = classify(registry, links, planned)
+    return {"flags": {f: [rid for rid, _, _ in rows] for f, rows in flags.items()}, "dangling": dangling + planned_dangling}
 out = {}
 for u in sorted(Path("subjects").rglob("unit.json")):
     out[f"{u.parent.as_posix()}|None|None"] = report(u.parent)
@@ -453,7 +454,11 @@ print(json.dumps(out))
 				lessonSources(lessons),
 				tasksForOffering(unit, offering?.id ?? null, term)
 			);
-			actual[key] = { flags: classify(registry, gathered), dangling: gathered.dangling };
+			const agreed = agreedLessons(unit, registry);
+			actual[key] = {
+				flags: classify(registry, gathered, agreed),
+				dangling: [...gathered.dangling, ...agreed.dangling]
+			};
 		}
 		expect(actual).toEqual(expected);
 	});

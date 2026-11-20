@@ -90,8 +90,9 @@ src/lib/components/, src/routes/   UI
   `schemas/` save unchecked; the app never adds schemas to them. The starter
   schemas must never be stricter than a real repo's (a `DATA_REPO` test checks).
 - **Duplicated logic.** `offerings.ts`, `tasks.ts` (`tasksForOffering`),
-  `deliveries.ts` and `coverage.ts` (`gather`, `classify`) duplicate Python in
-  the data repo (`offering_lessons.py`, `deliveries.py`, `coverage_report.py`).
+  `deliveries.ts` and `coverage.ts` (`gather`, `agreedLessons`, `classify`) duplicate Python in
+  the data repo (`offering_lessons.py`, `deliveries.py`, `coverage_report.py`,
+  whose `gather_planned` is `agreedLessons`).
   The `DATA_REPO` parity tests compare them; keep them passing. Coverage as
   taught, from delivery records, has no Python counterpart.
 - **Feedback lives on delivery records**

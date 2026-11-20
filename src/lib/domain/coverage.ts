@@ -6,6 +6,10 @@
  * lessons a class's delivery records say it was taught, each with the plan
  * it was taught from.
  *
+ * A unit's `planned` lessons are agreed but not yet written. Their ids are
+ * intentions: they turn UNCOVERED into PLANNED and never count as a lesson's
+ * link, as `gather_planned` and `classify` in the script decide it.
+ *
  * As in the script, a flag is a prompt for a reader, not a verdict. Three
  * partials may add up to full treatment; one full link may name-check a point
  * and move on.
@@ -14,12 +18,20 @@
 import type { DeliveryRecord } from './deliveries.ts';
 import { termOf } from './schedule.ts';
 import type { Task } from './tasks.ts';
-import type { CurriculumLink, Lesson, RegistryEntry, SchoolCalendar } from './types.ts';
+import type { CurriculumLink, Lesson, RegistryEntry, SchoolCalendar, Unit } from './types.ts';
 
 export const DEVELOPED_MODES = new Set(['developed', 'consolidated']);
 
-export type Flag = 'UNCOVERED' | 'PARTIAL' | 'ONCE' | 'SHALLOW' | 'ELSEWHERE' | 'OK';
-export const FLAGS: Flag[] = ['UNCOVERED', 'PARTIAL', 'ONCE', 'SHALLOW', 'ELSEWHERE', 'OK'];
+export type Flag = 'UNCOVERED' | 'PLANNED' | 'PARTIAL' | 'ONCE' | 'SHALLOW' | 'ELSEWHERE' | 'OK';
+export const FLAGS: Flag[] = [
+	'UNCOVERED',
+	'PLANNED',
+	'PARTIAL',
+	'ONCE',
+	'SHALLOW',
+	'ELSEWHERE',
+	'OK'
+];
 
 /** Where links come from: a lesson (its ref relative to the unit) and the links it makes. */
 export interface Source {
@@ -103,9 +115,41 @@ export function gather(registry: RegistryEntry[], sources: Source[], tasks: Task
 	return { links, dangling, refs: new Set(sources.map((s) => s.ref)) };
 }
 
-/** One dot point's flag from the links that reach it, as `classify` in the script decides it. */
-export function flagOf(entry: RegistryEntry, reaches: Reach[]): Flag {
-	if (reaches.length === 0) return entry.owned_by ? 'ELSEWHERE' : 'UNCOVERED';
+/** The unit's `planned` lessons by the ids they name, as `gather_planned` in the script. */
+export interface Agreed {
+	/** Every registry id, with the titles of the planned lessons that name it. */
+	byId: Map<string, string[]>;
+	/** Planned ids the registry does not hold: `planned: title -> id`. */
+	dangling: string[];
+}
+
+export function agreedLessons(unit: Unit, registry: RegistryEntry[]): Agreed {
+	const byId = new Map<string, string[]>([...registryById(registry).keys()].map((id) => [id, []]));
+	const dangling: string[] = [];
+	for (const item of unit.planned ?? []) {
+		for (const id of item.ids ?? []) {
+			const at = byId.get(id);
+			if (at) at.push(item.title);
+			else dangling.push(`planned: ${item.title} -> ${id}`);
+		}
+	}
+	return { byId, dangling };
+}
+
+/**
+ * One dot point's flag from the links that reach it, as `classify` in the
+ * script decides it. `agreed` is the planned lessons that name it, which
+ * matter only where no link does.
+ */
+export function flagOf(
+	entry: RegistryEntry,
+	reaches: Reach[],
+	agreed: readonly string[] = []
+): Flag {
+	if (reaches.length === 0) {
+		if (entry.owned_by) return 'ELSEWHERE';
+		return agreed.length ? 'PLANNED' : 'UNCOVERED';
+	}
 	if (!reaches.some((r) => r.link.coverage === 'full')) return 'PARTIAL';
 	if (reaches.some((r) => DEVELOPED_MODES.has(r.link.mode))) return 'OK';
 	// One encounter can only be 'introduced': say how many lessons reach the
@@ -114,10 +158,14 @@ export function flagOf(entry: RegistryEntry, reaches: Reach[]): Flag {
 }
 
 /** Registry ids by flag, each in registry order. */
-export function classify(registry: RegistryEntry[], gathered: Gathered): Record<Flag, string[]> {
+export function classify(
+	registry: RegistryEntry[],
+	gathered: Gathered,
+	agreed: Agreed | null = null
+): Record<Flag, string[]> {
 	const flags = Object.fromEntries(FLAGS.map((f) => [f, [] as string[]])) as Record<Flag, string[]>;
 	for (const [id, entry] of registryById(registry)) {
-		flags[flagOf(entry, gathered.links.get(id) ?? [])].push(id);
+		flags[flagOf(entry, gathered.links.get(id) ?? [], agreed?.byId.get(id))].push(id);
 	}
 	return flags;
 }
@@ -178,7 +226,12 @@ export interface CoverageRow {
 	taughtFlag: Flag | null;
 	/** Links from the assessment tasks the class sits, or every task without a class. */
 	tasks: Reach[];
-	/** No taught lesson reaches it yet, and a planned lesson that does is still to be taught. */
+	/** Titles of the unit's planned lessons, agreed and not yet written, that name it. */
+	agreed: string[];
+	/**
+	 * No taught lesson reaches it yet, and a listed lesson that does is still
+	 * to be taught, or a lesson not yet written is meant to.
+	 */
 	toCome: boolean;
 }
 
@@ -187,11 +240,17 @@ export interface Coverage {
 	dangling: string[];
 }
 
-/** The registry's rows, planned against taught. `taught` is null without a class. */
+/**
+ * The registry's rows, planned against taught. `taught` is null without a
+ * class. `agreed` is the unit's planned lessons, not yet written: they flag a
+ * point no listed lesson reaches, and never the taught side, since a lesson
+ * is only taught once it is written.
+ */
 export function coverage(
 	registry: RegistryEntry[],
 	planned: Gathered,
-	taught: Gathered | null
+	taught: Gathered | null,
+	agreed: Agreed | null = null
 ): Coverage {
 	const lessons = (reaches: Reach[]) => reaches.filter((r) => !r.assessment);
 	const rows: CoverageRow[] = [];
@@ -199,17 +258,22 @@ export function coverage(
 		const all = planned.links.get(id) ?? [];
 		const p = lessons(all);
 		const t = taught ? lessons(taught.links.get(id) ?? []) : null;
+		const titles = agreed?.byId.get(id) ?? [];
 		rows.push({
 			entry,
 			planned: p,
-			plannedFlag: flagOf(entry, p),
+			plannedFlag: flagOf(entry, p, titles),
 			taught: t,
 			taughtFlag: t ? flagOf(entry, t) : null,
 			tasks: all.filter((r) => r.assessment),
-			toCome: !!taught && t?.length === 0 && p.some((r) => !taught.refs.has(r.ref ?? ''))
+			agreed: titles,
+			toCome:
+				!!taught &&
+				t?.length === 0 &&
+				(p.some((r) => !taught.refs.has(r.ref ?? '')) || titles.length > 0)
 		});
 	}
-	const dangling = [...planned.dangling];
+	const dangling = [...planned.dangling, ...(agreed?.dangling ?? [])];
 	for (const d of taught?.dangling ?? []) if (!dangling.includes(d)) dangling.push(d);
 	return { rows, dangling };
 }
@@ -230,7 +294,9 @@ export function reached(row: CoverageRow): boolean {
  * owned by another unit is not this unit's to teach.
  */
 export function needsLook(row: CoverageRow): boolean {
-	const short = (f: Flag | null) => f !== null && f !== 'OK' && f !== 'ELSEWHERE';
+	// PLANNED is on its way: an agreed lesson is meant to reach it once written.
+	const short = (f: Flag | null) =>
+		f !== null && f !== 'OK' && f !== 'ELSEWHERE' && f !== 'PLANNED';
 	return short(row.plannedFlag) || (!row.toCome && short(row.taughtFlag));
 }
 

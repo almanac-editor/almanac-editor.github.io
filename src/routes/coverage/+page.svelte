@@ -7,6 +7,7 @@
 	import Failure from '#lib/components/Failure.svelte';
 	import PageHead from '#lib/components/PageHead.svelte';
 	import {
+		agreedLessons,
 		byPhase,
 		coverage,
 		gather,
@@ -95,7 +96,7 @@
 				offering,
 				refs,
 				revision: 'revises' in unit,
-				report: coverage(registry, planned, taught),
+				report: coverage(registry, planned, taught, agreedLessons(unit, registry)),
 				taughtRefs: taught?.refs ?? new Set<string>(),
 				entries: offeringEntries(u, offerings),
 				houses: houseMap(offerings)
@@ -105,6 +106,7 @@
 
 	const LABELS: Record<Flag, string> = {
 		UNCOVERED: 'Not reached',
+		PLANNED: 'Not written yet',
 		PARTIAL: 'Only in part',
 		ONCE: 'Once',
 		SHALLOW: 'Never developed',
@@ -113,7 +115,9 @@
 	};
 
 	const HINTS: Record<Flag, string> = {
-		UNCOVERED: 'No lesson links to this dot point.',
+		UNCOVERED: 'No lesson links to this dot point, written or planned.',
+		PLANNED:
+			'No written lesson links to this dot point yet. A lesson in the unit’s planned sequence is meant to.',
 		PARTIAL: 'Every lesson link is partial; none is full.',
 		ONCE: 'One lesson reaches this in full, and nothing comes back to it.',
 		SHALLOW: 'Lessons return to it, and none develops or consolidates it.',
@@ -121,10 +125,21 @@
 		OK: 'Reached in full, and developed or consolidated in some lesson.'
 	};
 
-	const COME_HINT = 'A planned lesson reaches it, and hasn’t been taught yet.';
+	const COME_HINT =
+		'A lesson in the list reaches it and hasn’t been taught yet, or a planned lesson not yet written is meant to.';
 
 	/** The legend's order: healthy first, then each kind of shortfall. */
-	const KEY_ORDER: Flag[] = ['OK', 'ONCE', 'SHALLOW', 'PARTIAL', 'UNCOVERED', 'ELSEWHERE'];
+	const KEY_ORDER: Flag[] = [
+		'OK',
+		'ONCE',
+		'SHALLOW',
+		'PARTIAL',
+		'UNCOVERED',
+		'PLANNED',
+		'ELSEWHERE'
+	];
+	/** Flags the key shows only where some row has them. */
+	const SOMETIMES: Flag[] = ['PLANNED', 'ELSEWHERE'];
 
 	/** `lessons/03_hats.json` -> `03`; null for a name with no number. */
 	const numberOf = (ref: string) => ref.split('/').pop()?.match(/^\d+/)?.[0] ?? null;
@@ -171,7 +186,8 @@
 		{@const flagged = report.rows.filter(needsLook)}
 		{@const shown = onlyFlagged ? flagged : report.rows}
 		{@const keys = KEY_ORDER.filter(
-			(f) => f !== 'ELSEWHERE' || report.rows.some((r) => r.plannedFlag === f || r.taughtFlag === f)
+			(f) =>
+				!SOMETIMES.includes(f) || report.rows.some((r) => r.plannedFlag === f || r.taughtFlag === f)
 		)}
 		<PageHead
 			crumbs={[
@@ -382,7 +398,18 @@
 															</div>
 														</div>
 													{:else}
-														<p class="sub">No lesson or task links to this dot point.</p>
+														{#if !row.agreed.length}
+															<p class="sub">No lesson or task links to this dot point.</p>
+														{/if}
+													{/each}
+													{#each row.agreed as title, i (i)}
+														<div class="line">
+															<span class="ln"></span>
+															<div class="lt">
+																<span>{title}</span>
+																<span class="st">Planned, not written yet</span>
+															</div>
+														</div>
 													{/each}
 												</div>
 											</details>
@@ -591,6 +618,12 @@
 		background: var(--rule-strong);
 	}
 
+	.k.PLANNED {
+		outline: 2px dashed var(--muted);
+		outline-offset: -2px;
+		background: var(--paper);
+	}
+
 	.k.come {
 		outline: 2px dashed var(--house-deep);
 		outline-offset: -2px;
@@ -717,7 +750,8 @@
 		color: var(--note-deep);
 	}
 
-	.cell.ELSEWHERE {
+	.cell.ELSEWHERE,
+	.cell.PLANNED {
 		color: var(--muted);
 	}
 

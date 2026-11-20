@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
+	agreedLessons,
 	byPhase,
 	classify,
 	coverage,
@@ -18,7 +19,7 @@ import {
 } from './coverage.ts';
 import type { Delivery } from './deliveries.ts';
 import type { Task } from './tasks.ts';
-import type { CurriculumLink, Lesson, RegistryEntry, SchoolCalendar } from './types.ts';
+import type { CurriculumLink, Lesson, RegistryEntry, SchoolCalendar, Unit } from './types.ts';
 
 const entry = (id: string, phase = 'Exploring', extra: Partial<RegistryEntry> = {}) => ({
 	id,
@@ -62,6 +63,13 @@ describe('flagOf', () => {
 		expect(flagOf({ ...e, owned_by: 'units/other' }, [])).toBe('ELSEWHERE');
 	});
 
+	it('flags a point only a lesson not yet written is meant to reach', () => {
+		expect(flagOf(e, [], ['Later'])).toBe('PLANNED');
+		expect(flagOf({ ...e, owned_by: 'units/other' }, [], ['Later'])).toBe('ELSEWHERE');
+		// A written lesson's link decides the flag wherever there is one.
+		expect(flagOf(e, [reach('full', 'introduced')], ['Later'])).toBe('ONCE');
+	});
+
 	it('flags a point reached only in part', () => {
 		expect(flagOf(e, [reach('partial', 'developed'), reach('partial', 'consolidated')])).toBe(
 			'PARTIAL'
@@ -103,12 +111,27 @@ describe('gather and classify', () => {
 	it('puts each id under its flag in registry order', () => {
 		expect(classify(registry, gather(registry, lessonSources(lessons), tasks))).toEqual({
 			UNCOVERED: ['SK-04'],
+			PLANNED: [],
 			PARTIAL: ['SK-02'],
 			ONCE: ['SK-01'],
 			SHALLOW: [],
 			ELSEWHERE: [],
 			OK: ['SK-03']
 		});
+	});
+
+	it('reads planned lessons, and lists a planned id outside the registry', () => {
+		const unit: Unit = {
+			unit_title: 'Sorting',
+			planned: [{ title: 'Later', ids: ['SK-04', 'SK-01', 'SK-99'] }, { title: 'Flex' }]
+		};
+		const agreed = agreedLessons(unit, registry);
+		expect(agreed.byId.get('SK-04')).toEqual(['Later']);
+		expect(agreed.dangling).toEqual(['planned: Later -> SK-99']);
+		const flags = classify(registry, gather(registry, lessonSources(lessons), tasks), agreed);
+		expect(flags.PLANNED).toEqual(['SK-04']);
+		expect(flags.UNCOVERED).toEqual([]);
+		expect(flags.ONCE).toEqual(['SK-01']);
 	});
 
 	it('goes by the ref where a plan has no title', () => {
@@ -238,6 +261,23 @@ describe('coverage', () => {
 		const { rows } = coverage(registry, planned, taught);
 		expect(rows.filter(needsLook).map((r) => r.entry.id)).toEqual(['SK-01', 'SK-03', 'SK-04']);
 		expect(rows.map(shownFlag)).toEqual(['ONCE', 'UNCOVERED', 'UNCOVERED', 'UNCOVERED']);
+	});
+
+	it('reads a point only a planned lesson names as on its way, not short', () => {
+		const unit: Unit = { unit_title: 'Sorting', planned: [{ title: 'Later', ids: ['SK-04'] }] };
+		const agreed = agreedLessons(unit, registry);
+		const taught = gather(registry, [], []);
+		const row = coverage(registry, planned, taught, agreed).rows.find(
+			(r) => r.entry.id === 'SK-04'
+		);
+		expect(row).toMatchObject({
+			plannedFlag: 'PLANNED',
+			taughtFlag: 'UNCOVERED',
+			agreed: ['Later'],
+			toCome: true
+		});
+		expect(row && needsLook(row)).toBe(false);
+		expect(row && reached(row)).toBe(false);
 	});
 
 	it('has no taught side without a class', () => {
