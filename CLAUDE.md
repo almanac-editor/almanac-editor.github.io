@@ -112,7 +112,9 @@ src/lib/components/, src/routes/   UI
   - Never logged, never put in a URL, only sent to `api.github.com`.
 - **The CSP** (in `vite.config.ts`) limits `connect-src` to `api.github.com`.
   No third-party scripts at run time. Never `{@html}` on data.
-- **Dependencies:** pinned exactly (`save-exact=true` in `.npmrc`). Runtime
+- **Dependencies:** `package.json` holds `^` ranges, and `package-lock.json`
+  pins what installs. New packages are added exact (`save-exact=true` in
+  `.npmrc`), but older ranges stay as they are. Runtime
   dependencies are Svelte, the validator and `@event-calendar/core` (the
   calendar's month grid; MIT, depends on Svelte alone, bundled, so the CSP is
   unchanged).
