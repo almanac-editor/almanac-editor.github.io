@@ -113,6 +113,7 @@
 		<div class="page"><div class="loading"><span></span><span></span><span></span></div></div>
 	{:then { unit, offering, lessons, tasks, entries, names, houses }}
 		{@const minutes = lessons.reduce((n, l) => n + (l.lesson?.duration_minutes ?? 0), 0)}
+		{@const planned = unit.planned ?? []}
 		<PageHead
 			crumbs={[
 				{ href: links.home(), label: offering ? className(offering) : titleCase(subjectOf(u)) },
@@ -139,6 +140,7 @@
 			{/snippet}
 			{#snippet meta()}
 				<span>{lessons.length} lessons</span>
+				{#if planned.length}<span>{planned.length} planned, not yet written</span>{/if}
 				<span>{Math.round(minutes / 6) / 10} hours of class time</span>
 				<span>{offering ? `In ${className(offering)}’s order` : 'In the unit’s own order'}</span>
 			{/snippet}
@@ -213,9 +215,27 @@
 						{/if}
 					</li>
 				{:else}
-					<li class="empty">
-						No lesson plans yet. <a href={links.newLesson(u, o, t)}>Write the first one</a>, or
-						press <kbd>N</kbd>.
+					{#if !planned.length}
+						<li class="empty">
+							No lesson plans yet. <a href={links.newLesson(u, o, t)}>Write the first one</a>, or
+							press <kbd>N</kbd>.
+						</li>
+					{/if}
+				{/each}
+				<!-- Agreed but not written: the unit's `planned`, after every written plan. -->
+				{#each planned as item, i (i)}
+					<li>
+						<div class="lane-row planned">
+							<span class="num">{String(lessons.length + i + 1).padStart(2, '0')}</span>
+							<span class="what">
+								<span class="title">{item.title}</span>
+								<span class="sub">
+									<span class="pill">Planned</span>
+									{#if item.ids?.length}· {item.ids.join(', ')}{/if}
+								</span>
+								{#if item.note}<span class="note">{item.note}</span>{/if}
+							</span>
+						</div>
 					</li>
 				{/each}
 			</ol>
@@ -392,8 +412,30 @@
 		color: var(--house);
 	}
 
-	.missing .num {
+	.missing .num,
+	.planned .num {
 		color: var(--rule-strong);
+	}
+
+	.planned .title {
+		color: var(--ink-2);
+	}
+
+	.pill {
+		display: inline-block;
+		padding: 0 6px;
+		font-size: 11px;
+		font-weight: 700;
+		letter-spacing: 0.04em;
+		text-transform: uppercase;
+		border: 1px solid var(--rule-strong);
+		color: var(--ink-2);
+	}
+
+	.note {
+		font-size: 13px;
+		color: var(--ink-2);
+		max-width: 72ch;
 	}
 
 	.what {

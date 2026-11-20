@@ -53,13 +53,15 @@ const plans = (): Tree => ({
 			lessons: { '01_socks.json': '{\n  "title": "Socks"\n}\n' }
 		}
 	},
-	offerings: { 'y7.json': '{\n  "id": "y7"\n}\n' }
+	offerings: { 'y7.json': '{\n  "id": "y7"\n}\n' },
+	calendar: { '2027.json': '{\n  "year": 2027\n}\n' }
 });
 
 describe('FolderStore', () => {
 	it('lists only the folders the app reads, skipping hidden ones', async () => {
 		const store = new FolderStore(folder('almanac', plans()));
 		expect([...(await store.paths()).keys()].sort()).toEqual([
+			'calendar/2027.json',
 			'offerings/y7.json',
 			'subjects/sorting/lessons/01_socks.json',
 			'subjects/sorting/unit.json'

@@ -80,6 +80,17 @@ export interface Unit {
 	/** Outcome codes from the subject's `outcome.json`. */
 	applicable_outcomes?: string[];
 	lessons?: string[];
+	/** Lessons agreed but not yet written, in teaching order, after those in `lessons`. */
+	planned?: PlannedLesson[];
+	[key: string]: unknown;
+}
+
+/** One entry in a unit's `planned`: a lesson agreed before its plan exists. */
+export interface PlannedLesson {
+	title: string;
+	/** Registry ids the lesson is meant to reach; never counted as taught. */
+	ids?: string[];
+	note?: string;
 	[key: string]: unknown;
 }
 
