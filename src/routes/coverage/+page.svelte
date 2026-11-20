@@ -97,6 +97,7 @@
 				refs,
 				revision: 'revises' in unit,
 				report: coverage(registry, planned, taught, agreedLessons(unit, registry)),
+				idChars: Math.max(0, ...registry.map((e) => e.id.length)),
 				taughtRefs: taught?.refs ?? new Set<string>(),
 				entries: offeringEntries(u, offerings),
 				houses: houseMap(offerings)
@@ -179,7 +180,7 @@
 	{#await load}
 		<PageHead title={null} />
 		<div class="page"><div class="loading"><span></span><span></span><span></span></div></div>
-	{:then { unit, offering, refs, revision, report, taughtRefs, entries, houses }}
+	{:then { unit, offering, refs, revision, report, idChars, taughtRefs, entries, houses }}
 		{@const total = report.rows.length}
 		{@const developed = report.rows.filter((r) => shownFlag(r) === 'OK').length}
 		{@const toCome = report.rows.filter((r) => r.toCome).length}
@@ -238,7 +239,7 @@
 					</div>
 				</div>
 			{:else}
-				<div class="wrap">
+				<div class="wrap" style:--id-chars={idChars}>
 					{#if report.dangling.length}
 						<div class="msg warn">
 							<div>
@@ -473,6 +474,9 @@
 	   so the flags sit near the words they judge. */
 	.wrap {
 		max-width: 1040px;
+		/* The id column fits the unit's longest id: 13px heavy capitals run
+		   about 0.7em each. Never under 58px. */
+		--id-w: max(58px, calc(var(--id-chars, 6) * 13px * 0.72));
 	}
 
 	.msg {
@@ -661,14 +665,14 @@
 	.cols,
 	.rows summary {
 		display: grid;
-		grid-template-columns: 58px minmax(0, 1fr) 150px 150px 16px;
+		grid-template-columns: var(--id-w) minmax(0, 1fr) 150px 150px 16px;
 		gap: 4px 16px;
 		align-items: baseline;
 	}
 
 	.cols.solo,
 	.rows summary.solo {
-		grid-template-columns: 58px minmax(0, 1fr) 150px 16px;
+		grid-template-columns: var(--id-w) minmax(0, 1fr) 150px 16px;
 	}
 
 	.cols {
@@ -714,7 +718,8 @@
 		font-weight: 800;
 		font-size: 13px;
 		color: var(--house-deep);
-		white-space: nowrap;
+		/* Wraps rather than run into the dot point's text, if the estimate is short. */
+		overflow-wrap: anywhere;
 	}
 
 	.what {
@@ -797,7 +802,7 @@
 	}
 
 	.behind {
-		padding: 2px 4px 16px calc(58px + 16px + 4px);
+		padding: 2px 4px 16px calc(var(--id-w) + 16px + 4px);
 		display: grid;
 		gap: 8px;
 	}
@@ -871,7 +876,7 @@
 
 		.rows summary,
 		.rows summary.solo {
-			grid-template-columns: 58px minmax(0, 1fr) 16px;
+			grid-template-columns: var(--id-w) minmax(0, 1fr) 16px;
 		}
 
 		.cell {
