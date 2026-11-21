@@ -4,6 +4,7 @@
 	// puts them. The header carries the details; a side column keeps the
 	// contents and the syllabus check in reach. Teacher notes stay folded at
 	// the foot.
+	import { tick } from 'svelte';
 	import { page } from '$app/state';
 	import Failure from '#lib/components/Failure.svelte';
 	import Icon from '#lib/components/Icon.svelte';
@@ -85,19 +86,43 @@
 		return () => query.removeEventListener('change', sync);
 	});
 
-	/** Marks the contents entry for the section being read. */
+	/**
+	 * Marks the contents entry for the section being read: the last one whose
+	 * top has passed a line a third of the way down the window. Also follows
+	 * the address's #fragment, which the browser can't do itself because the
+	 * page arrives after it looks: an id inside the teacher notes opens them.
+	 */
 	function spy(node: HTMLElement) {
-		const seen: Record<string, boolean> = {};
-		const observer = new IntersectionObserver(
-			(entries) => {
-				for (const e of entries) seen[e.target.id] = e.isIntersecting;
-				const sections = [...node.querySelectorAll<HTMLElement>('[data-toc]')];
-				here = sections.find((s) => seen[s.id])?.id ?? here;
-			},
-			{ rootMargin: '0px 0px -55% 0px' }
-		);
-		for (const s of node.querySelectorAll('[data-toc]')) observer.observe(s);
-		return () => observer.disconnect();
+		let frame = 0;
+		const mark = () => {
+			frame = 0;
+			const line = innerHeight / 3;
+			const sections = [...node.querySelectorAll<HTMLElement>('[data-toc]')];
+			const passed = sections.filter((s) => s.getBoundingClientRect().top <= line);
+			here = passed.at(-1)?.id ?? sections[0]?.id ?? null;
+		};
+		const onScroll = () => {
+			frame ||= requestAnimationFrame(mark);
+		};
+		const follow = async () => {
+			const id = decodeURIComponent(location.hash.slice(1));
+			const target = id ? document.getElementById(id) : null;
+			if (!target || !node.contains(target)) return;
+			if (target.closest('details.teacher')) teacherOpen = true;
+			await tick();
+			target.scrollIntoView();
+		};
+		mark();
+		void follow();
+		addEventListener('scroll', onScroll, { passive: true });
+		addEventListener('resize', onScroll);
+		addEventListener('hashchange', follow);
+		return () => {
+			cancelAnimationFrame(frame);
+			removeEventListener('scroll', onScroll);
+			removeEventListener('resize', onScroll);
+			removeEventListener('hashchange', follow);
+		};
 	}
 
 	const slug = (heading: string) =>
@@ -114,6 +139,10 @@
 			: null
 	);
 </script>
+
+<!-- A file path that wraps only after its slashes. -->
+{#snippet filePath(path: string)}{#each path.split('/') as piece, i (i)}{#if i > 0}/<wbr
+			/>{/if}{piece}{/each}{/snippet}
 
 {#if !o || !a}
 	<PageHead title="No assessment given" />
@@ -166,9 +195,11 @@
 		{/snippet}
 		{#snippet topicsProblems()}
 			{#if problems.length}
-				<ul class="problems">
-					{#each problems as problem, i (i)}<li>{problem}</li>{/each}
-				</ul>
+				<div class="msg warn problems">
+					<ul>
+						{#each problems as problem, i (i)}<li>{problem}</li>{/each}
+					</ul>
+				</div>
 			{/if}
 		{/snippet}
 		<PageHead
@@ -345,10 +376,10 @@
 				{/if}
 
 				<p class="source">
-					Read from <code>{path}</code>
+					Read from <code>{@render filePath(path)}</code>
 					{#if github}(<a href={github(path)} target="_blank" rel="noopener noreferrer">GitHub</a
 						>){/if}
-					and <code>{spec.notification}</code>.
+					and <code>{@render filePath(spec.notification)}</code>.
 				</p>
 			</article>
 		</div>
@@ -608,16 +639,21 @@
 		color: var(--warn-deep);
 	}
 
+	/* One message, one mark: the problems are rows inside it, not bullets. */
 	.problems {
 		margin: 0 0 18px;
-		padding: 12px 14px 12px 32px;
-		background: var(--warn-soft);
-		color: var(--warn-deep);
-		font-size: 14px;
+	}
+
+	.problems ul {
+		list-style: none;
+		margin: 0;
+		padding: 0;
 	}
 
 	.problems li + li {
-		margin-top: 4px;
+		margin-top: 6px;
+		padding-top: 6px;
+		border-top: 1px solid color-mix(in oklab, var(--warn-deep) 18%, transparent);
 	}
 
 	.phase {
@@ -704,7 +740,7 @@
 		margin: 48px 0 0;
 		font-size: 12px;
 		color: var(--muted);
-		overflow-wrap: anywhere;
+		overflow-wrap: break-word;
 	}
 
 	/* No room beside the document: the side column sits under the header. */

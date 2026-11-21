@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseInline, parseMarkdown, plain } from './markdown.ts';
-import { coveredParts, leadOf, readNotification } from './notification.ts';
+import { leadOf, readNotification } from './notification.ts';
 
 const NOTE = `# 2030 Year 8 Sample Subject
 
@@ -119,7 +119,6 @@ describe('readNotification', () => {
 			['Weighting', '25% (20% in class, 5% at home)'],
 			['Marks', '30']
 		]);
-		expect(n.totalMarks).toBe(30);
 	});
 
 	it('keeps the sections in order and the teacher notes apart', () => {
@@ -132,54 +131,14 @@ describe('readNotification', () => {
 		expect(n.teacher.map((s) => s.heading)).toEqual(['Teacher notes', 'Blueprint']);
 	});
 
-	it('finds the parts under Marking criteria, with places from the overview', () => {
-		expect(n.parts.map((p) => [p.number, p.label, p.marks, p.where])).toEqual([
-			[1, 'Part 1: Sketches', 10, 'home'],
-			[2, 'Part 2: Build and test', 20, 'class']
-		]);
-		expect(n.parts[0].rubric.map((b) => b.kind)).toEqual(['paragraph', 'table']);
-	});
-
-	it('gives each part the submissions that name it', () => {
-		expect(n.parts[0].submit.map((s) => s.heading)).toEqual([
-			'Part 1: Sketches (at home)',
-			'Parts 1 and 2: Logbook'
-		]);
-		expect(n.parts[1].submit.map((s) => s.heading)).toEqual(['Parts 1 and 2: Logbook']);
-	});
-
-	it('falls back to the overview table, then to bold part lines', () => {
-		const overview = readNotification(
-			NOTE.replace(/## Marking criteria[\s\S]*?# Teacher/, '# Teacher')
-		);
-		expect(overview.parts.map((p) => [p.number, p.label, p.marks, p.where])).toEqual([
-			[1, 'Sketches', 10, 'home'],
-			[2, 'Build and test', 20, 'class']
-		]);
-		const bold = readNotification(
-			'# S\n\n## Assessment: Exam\n\n## Task details\n\n**Section I: Multiple choice (10 marks)**\n\n**Section II: Writing (20 marks)**\n'
-		);
-		expect(bold.parts.map((p) => [p.number, p.label, p.marks])).toEqual([
-			[null, 'Section I: Multiple choice', 10],
-			[null, 'Section II: Writing', 20]
-		]);
-		expect(bold.totalMarks).toBe(30);
-	});
-
 	it('copes with no headings at all', () => {
 		const bare = readNotification('Just a line.\n');
-		expect(bare).toMatchObject({ subject: null, title: null, parts: [], totalMarks: null });
+		expect(bare).toMatchObject({ subject: null, title: null, details: [], sections: [] });
 		expect(bare.preface).toHaveLength(1);
 	});
 });
 
 describe('helpers', () => {
-	it('reads which parts a submission heading covers', () => {
-		expect(coveredParts('Parts 2 and 3: Dataset')).toEqual([2, 3]);
-		expect(coveredParts('Part 4: Video (at home)')).toEqual([4]);
-		expect(coveredParts('Logbook')).toEqual([]);
-	});
-
 	it('splits a detail into its lead and the rest', () => {
 		expect(leadOf('25% (20% in class, 5% at home)')).toEqual({
 			lead: '25%',

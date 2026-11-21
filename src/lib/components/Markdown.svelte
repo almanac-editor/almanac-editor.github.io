@@ -131,9 +131,9 @@
 <style>
 	.md-h3 {
 		margin: 26px 0 8px;
-		font-size: 17px;
-		font-weight: 800;
-		font-stretch: 90%;
+		font-size: 20px;
+		font-weight: 850;
+		font-stretch: 72%;
 	}
 
 	.md-h4 {
@@ -156,8 +156,9 @@
 	}
 
 	.md-lead {
-		margin: 18px 0 8px;
-		font-size: 15px;
+		margin: 14px 0 6px;
+		font-size: 14px;
+		color: var(--ink-2);
 	}
 
 	.md-coded {
@@ -320,7 +321,7 @@
 	}
 
 	.rubric thead th:first-child {
-		width: 78px;
+		width: 96px;
 	}
 
 	.rubric tbody td {
@@ -330,8 +331,8 @@
 	}
 
 	.rubric .band {
-		padding-top: 7px;
-		font-size: 26px;
+		padding-top: 6px;
+		font-size: 34px;
 		font-weight: 900;
 		font-stretch: 70%;
 		line-height: 1;
@@ -351,11 +352,11 @@
 		}
 
 		.rubric thead th:first-child {
-			width: 58px;
+			width: 76px;
 		}
 
 		.rubric .band {
-			font-size: 21px;
+			font-size: 28px;
 		}
 	}
 </style>

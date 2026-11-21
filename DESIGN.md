@@ -218,6 +218,31 @@ components:
     backgroundColor: '{colors.note-soft}'
     textColor: '{colors.note-deep}'
     padding: '12px 14px'
+  detail-figure:
+    textColor: '{colors.house-on}'
+    typography: '{typography.figure}'
+    padding: '12px 28px 2px 0'
+  detail-figure-wide:
+    textColor: '{colors.house-on}'
+    typography: '{typography.headline}'
+  rubric-mark-range:
+    textColor: '{colors.house-cobalt}'
+    typography: '{typography.figure}'
+    width: '96px'
+  rubric-mark-range-top:
+    textColor: '{colors.house-cobalt-deep}'
+  side-column:
+    textColor: '{colors.ink-2}'
+    typography: '{typography.control}'
+    width: '290px'
+  toc-current:
+    textColor: '{colors.house-cobalt-deep}'
+  topic-id:
+    textColor: '{colors.house-cobalt-deep}'
+    typography: '{typography.label}'
+    width: '112px'
+  topic-id-unknown:
+    textColor: '{colors.warn-deep}'
 ---
 
 # Design System: Almanac Editor
@@ -308,6 +333,18 @@ Dark mode (system preference unless `data-theme='light'`, or forced with `data-t
 - **Label** (600–700, 13px): field labels, crumbs, header meta, counts.
 - **Micro** (600–800, 11–12px): lane segment labels, tick numbers, finish-line flag, term codes, offering ids in bands.
 
+The assessment notification adds sizes the ramp lacks. Each sits under the closest role rather than forming a second ramp:
+
+- **Headline, notification part heading** (850, 20px, 72% width): a `###` heading inside a notification section, such as "Part 2: Ideas and prototype". Condensed like the section head and two pixels under it, so the section head above it still leads.
+- **Headline, wide detail value** (800, 22px, 80% width, 1.05): a detail in the header whose leading value runs past 8 characters (a due date), set smaller than the figure beside it.
+- **Headline, teacher notes summary** (800, 17px): the folded disclosure at the foot, as the margin headings.
+- **Figure, detail lead** (900, 40px, 0.9, 70% width, tabular; 32px below 640px): the leading value of a detail in the header ("30%", "40").
+- **Figure, mark range** (900, 34px, 1, 70% width, tabular; 28px below 640px): the marks of a rubric row ("10-9").
+- **Title small, notification sub-heading** (750, 15px): a `####` heading in a notification; a spec phase heading under Assessable topics takes the h3 weight at 15px in house deep.
+- **Control, criterion row** (14px, ink 2): a criterion named on its own line above its rubric ("**Prototype (10 marks)**"); also outcome lines, the contents list (800 for the current entry) and the side column's status line.
+- **Label** (750–800, 13px): side column headings, syllabus ids beside topics, a detail's rest line ("(20% in class, 10% at home)"), topic notes.
+- **Micro** (650–750, 12px): detail labels in the header (Due, Weighting, Marks), ids on spec-only topic rows, the source line at the foot.
+
 ### Named Rules
 
 **The Scale Contrast Rule.** Rank is made by jumping from a 34–112px condensed figure to a 13px label in the same row, not by colour blocks, boxes or caps. Labels stay small and sentence case.
@@ -325,6 +362,7 @@ Dark mode (system preference unless `data-theme='light'`, or forced with `data-t
 - **Lesson page:** run sheet column plus a 260–340px sticky margin on the right holding syllabus, feedback and resources; the margin drops under the body below 1000px.
 - **Home:** each class is a full-width house band: a 180–220px name tag on the left and its units as paper tiles (`auto-fill, minmax(240px, 1fr)`, 4px gaps) inside the band. Below 640px the tag stacks above the tiles.
 - **Gaps between colour fields** are tight (2–4px) so fields read as one striped surface; gaps between text blocks are generous.
+- **Assessment page:** the document column plus a sticky side column (about 290px, 48px gap, 24px from the top, scrolling on its own when taller than the window) on the right. Notification sections sit 44px apart and the teacher notes 48px below the last. Below 861px the side column moves under the header, above the document, with On this page collapsed. Below 640px the header's details become a two-column grid with a wide value spanning both.
 
 ## Elevation & Depth
 
@@ -341,7 +379,7 @@ The world is flat. Separation comes from colour fields, the chalk/paper step and
 
 ## Shapes
 
-Square. Controls, code and kbd take a 2px radius; colour fields, tiles, bands, lane segments, panels and dialogs are 0. Circles appear only as status marks (the save-state dot, the success message mark). Form language is rectangles and lines: 2px ink rules head lists, 1px rules divide rows, 3px house rules top feedback entries, 3px ink bars mark the finish line, and small solid squares (9–12px) serve as list bullets, legend keys and message marks (a diamond for warnings).
+Square. Controls, code and kbd take a 2px radius; colour fields, tiles, bands, lane segments, panels and dialogs are 0. Circles appear only as status marks (the save-state dot, the success message mark). Form language is rectangles and lines: 2px ink rules head lists, 1px rules divide rows, 3px house rules top feedback entries, 3px ink bars mark the finish line, and small solid squares (9–12px) serve as list bullets, legend keys and message marks (a diamond for warnings). The syllabus check's mark follows the same pair: a 9px circle when the topics match, a 9px diamond when they don't. Notification bullets are smaller house squares (6px), since they sit in running text.
 
 ## Components
 
@@ -423,6 +461,41 @@ Feedback lives in the lesson margin as a stack of paper entries, each topped wit
 
 One tinted block with one mark, never a coloured edge stripe. 12px 14px padding, 14px text, a 10px mark in the leading position: a warn-deep diamond on warn soft for problems, a good-green circle on good soft for success, a note-deep square on note soft for notices.
 
+### Assessment Notification (signature)
+
+The notification is the document: the page draws its Markdown top to bottom in file order, as students get it, on the chalk page. Nothing is rearranged into a dashboard and the parts appear only where the notification puts them.
+
+- **Section heads:** each `##` section opens with its heading as a Headline over a 2px ink rule (10px under the text, 16px above the content). A preface before the first heading sits unheaded.
+- **Part headings:** `###` headings at 20px/850, 72% width, 26px above; `####` at 15px/750.
+- **Criterion rows:** a paragraph that is only bold text names a criterion above its rubric, in 14px ink 2.
+- **Outcome lines:** a line opening with an outcome code puts the code in an 82px leading cell (bold, house deep, tabular) and the outcome in 14px ink 2 beside it; on phones the code stacks above.
+- **Rubric tables:** a table whose first column is headed "Marks" becomes a rubric. Its head is 12px muted over a 2px ink rule; each mark range puts its marks in a 96px leading column as a Figure numeral (34px, house colour, the top range in house deep) and its words in body text, rows divided by 1px rules. On phones the column is 76px and the figure 28px.
+- **Other tables:** the same ruled head, first column at 650, scrolling sideways inside their own wrapper when too wide.
+- **Lists:** unordered items take a 6px house square as bullet.
+- **Inline:** strong, emphasis, code and links only, drawn as elements; links open in a new tab.
+
+The made-up sample in `src/lib/demo.ts` (the "Torch redesign" task) shows each pattern.
+
+### Details Figures
+
+The notification's details table (Due, Weighting, Marks and the like) moves into the page header as figures under the title. Each detail is a block topped by a 2px rule of 55% house on, with a 12px label, then its leading value as a 40px Figure numeral in house on and anything after the first bracket, comma or semicolon as a small 13px rest line beneath. A leading value longer than 8 characters (a date) is set smaller, at 22px Headline, and the block widens (260–420px). The meta row under the title names the units examined, each a link, and the syllabus status as a link to the topics.
+
+### Side Column
+
+Contents and the syllabus check, kept in reach beside the document. Each block opens with a 2px ink rule and a 13px/800 heading, 26px apart.
+
+- **On this page:** the notification's sections in order, then Assessable topics when the notification holds no topics list, then Teacher notes. Entries are 14px ink 2 on a 2px rule track down the left; hover turns the text house deep. The section being read (the last whose top has passed a third of the window) thickens its segment to a 3px house rule, with the label at 800 in house deep. This rule marks a position on a navigation track, not a stripe on a content block.
+- **Syllabus check:** a status line, not a panel. A 9px good circle and "**Matches**" in good, or a 9px warn-deep diamond and "**3 to fix**" in warn-deep, then the count of units and topics in 14px ink 2. It links to the topics, opening the teacher notes when they hold them.
+- **Placement:** sticky at about 290px on wide screens. Below 861px it sits under the header with On this page collapsed behind a chevron.
+
+### Assessable Topics
+
+The topics list in the notification (in the body for an exam, in the teacher notes for an assignment) becomes a ruled list with a 112px leading cell of syllabus ids, one per line, 13px/750 house deep. An id the unit's registry doesn't know is struck through with a 2px line in warn-deep; a topic with no id reads "No id" in muted. A topic's note sits under its text in 13px note-deep. The heading carries a status beside it only when the syllabus check fails ("3 to fix before the data repo's checks pass", warn-deep with a diamond), and the problems sit under it as one warn message (Messages): a single diamond, each problem a row divided by a hairline of 18% warn-deep, no bullets. When the notification has no topics list, the spec's topics are drawn instead, grouped by unit and phase.
+
+### Teacher Notes
+
+Everything after the notification's second `#` heading, folded at the foot of the document under a 2px ink rule. The summary reads "Teacher notes" at 17px/800 with the section names after it in 13px muted, and an 18px chevron that rotates 180° over 180ms on the house ease when opened. Hover and open turn the summary house deep. Opened, its sections take the same section heads as the notification. A link to an id inside them, or to the topics they hold, opens them first.
+
 ### Loading
 
 Rows of rule-coloured bars (100%, 80%, 60%) with a slow linear shimmer, never a spinner; the header shows a translucent title-sized block.
@@ -439,6 +512,9 @@ Rows of rule-coloured bars (100%, 80%, 60%) with a slow linear shimmer, never a 
 - **Do** present feedback as paper entries topped with a 3px house rule.
 - **Do** keep corners at 0 for fields and 2px for controls.
 - **Do** honour `prefers-reduced-motion`; every transition collapses to near zero.
+- **Do** draw an assessment notification in its own order, its parts only where it puts them.
+- **Do** put rubric mark ranges and outcome codes in a leading cell, as a Figure numeral and a bold house-deep label.
+- **Do** show the syllabus status beside the topics only when the check fails; elsewhere it stays a status line in the header and side column.
 
 ### Don't:
 
@@ -449,3 +525,5 @@ Rows of rule-coloured bars (100%, 80%, 60%) with a slow linear shimmer, never a 
 - **Don't** load fonts or any asset from a third-party host; the CSP allows only api.github.com.
 - **Don't** round corners beyond 2px, except circular status dots.
 - **Don't** use uppercase tracking for labels; labels are small, sentence case and bold.
+- **Don't** add a marks bar, a parts list or a part summary panel to the assessment page; the owner retired them, and the notification's own Marking criteria is enough.
+- **Don't** render notification Markdown as HTML; parse it and draw each node as an element.
