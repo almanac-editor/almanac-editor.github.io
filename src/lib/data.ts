@@ -46,7 +46,7 @@ import { withLesson } from './domain/newLesson.ts';
 import { isFresh, STARTER_SCHEMAS } from './domain/starter.ts';
 import { offeringPath } from './domain/newOffering.ts';
 import { byNumber } from './house.ts';
-import { ConflictError, type Loaded } from './domain/repo.ts';
+import { ConflictError, NotFoundError, type Loaded } from './domain/repo.ts';
 import type { Store, Write } from './domain/store.ts';
 import type { Lesson, Offering, RegistryEntry, SchoolCalendar, Unit } from './domain/types.ts';
 import type { OutcomeSet } from './domain/unitEdit.ts';
@@ -499,10 +499,49 @@ export class Data {
 		return this.store.readJson<AssessmentSpec>(assessmentPath(offeringPath, name));
 	}
 
-	/** A text file by its repo path, or null where it is not among the files Almanac reads. */
+	/**
+	 * Saves a spec and its notification together: one commit on GitHub, two
+	 * writes in a folder (PartlySavedError if only the first lands). `specSha`
+	 * and `notificationSha` are the versions loaded, or null for new files.
+	 * Throws ConflictError if either changed (or exists) meanwhile, and an
+	 * Error listing the problems if the spec's schema refuses it. A repo
+	 * without `schemas/assessment.schema.json` saves unchecked.
+	 */
+	async saveAssessment(
+		specPath: string,
+		spec: AssessmentSpec,
+		specSha: string | null,
+		notification: string,
+		notificationSha: string | null,
+		message: string
+	): Promise<void> {
+		await this.check('assessment.schema.json', spec);
+		await this.store.writeMany(
+			[
+				{ path: specPath, doc: spec, sha: specSha },
+				{ path: spec.notification, text: notification, sha: notificationSha }
+			],
+			message
+		);
+	}
+
+	/** A text file by its repo path, or null where there is none. */
 	async text(path: string): Promise<string | null> {
-		if (!(await this.store.has(path))) return null;
-		return (await this.store.readText(path)).doc;
+		return (await this.textFile(path))?.doc ?? null;
+	}
+
+	/**
+	 * A text file by its repo path, with its version, or null where there is
+	 * none. Read by path, not from the listing, so a folder finds a file
+	 * outside the folders it lists (a spec's notification can sit anywhere).
+	 */
+	async textFile(path: string): Promise<Loaded<string> | null> {
+		try {
+			return await this.store.readText(path);
+		} catch (error) {
+			if (error instanceof NotFoundError) return null;
+			throw error;
+		}
 	}
 
 	/** The school calendars, `calendar/<year>.json`, by path, each with its version. */

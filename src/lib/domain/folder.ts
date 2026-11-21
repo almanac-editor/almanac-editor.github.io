@@ -13,8 +13,8 @@
  */
 
 import { dump } from './format.ts';
-import { ConflictError, NotFoundError, type Loaded } from './repo.ts';
-import type { Store, Write } from './store.ts';
+import { ConflictError, NotFoundError, PartlySavedError, type Loaded } from './repo.ts';
+import { contentOf, type Store, type Write } from './store.ts';
 
 export interface FolderFile {
 	kind: 'file';
@@ -106,11 +106,15 @@ export class FolderStore implements Store {
 		return this.write(handle, doc);
 	}
 
-	/** A folder has no commits: every file is checked, then each is written in turn. */
+	/**
+	 * A folder has no commits: every file is checked, then each is written in
+	 * turn. A write that fails after others succeeded throws PartlySavedError
+	 * naming both. A file is found by its path, so it may sit outside ROOTS.
+	 */
 	async writeMany(files: Write[]): Promise<void> {
 		for (const file of files) {
 			if (file.sha === null) {
-				if (await this.has(file.path)) throw new ConflictError(`${file.path} already exists.`);
+				if (await this.exists(file.path)) throw new ConflictError(`${file.path} already exists.`);
 				continue;
 			}
 			const current = await (await (await this.file(file.path)).getFile()).text();
@@ -118,24 +122,47 @@ export class FolderStore implements Store {
 				throw new ConflictError(`${file.path} changed on disk since it was opened.`);
 			}
 		}
+		const saved: string[] = [];
 		for (const file of files) {
-			if (file.sha === null) await this.createJson(file.path, file.doc);
-			else await this.writeJson(file.path, file.doc, file.sha);
+			try {
+				const handle = file.sha === null ? await this.make(file.path) : await this.file(file.path);
+				await this.put(handle, contentOf(file));
+				if (file.sha === null) this.tree?.set(file.path, '');
+				saved.push(file.path);
+			} catch (error) {
+				if (!saved.length) throw error;
+				const unsaved = files.map((f) => f.path).filter((p) => !saved.includes(p));
+				throw new PartlySavedError(
+					`${saved.join(' and ')} ${saved.length === 1 ? 'was' : 'were'} saved, but ${unsaved.join(' and ')} ${unsaved.length === 1 ? 'was' : 'were'} not: ${(error as Error).message}`,
+					saved,
+					unsaved
+				);
+			}
 		}
 	}
 
-	async createJson(path: string, doc: unknown): Promise<string> {
+	private async exists(path: string): Promise<boolean> {
 		try {
 			await this.file(path);
-			throw new ConflictError(`${path} already exists.`);
+			return true;
 		} catch (error) {
-			if (!(error instanceof NotFoundError)) throw error;
+			if (error instanceof NotFoundError) return false;
+			throw error;
 		}
+	}
+
+	/** A new file's handle, making its folders. */
+	private async make(path: string): Promise<FolderFile> {
 		const parts = path.split('/');
 		const name = parts.pop() ?? '';
 		let dir = this.root;
 		for (const part of parts) dir = await dir.getDirectoryHandle(part, { create: true });
-		const sha = await this.write(await dir.getFileHandle(name, { create: true }), doc);
+		return dir.getFileHandle(name, { create: true });
+	}
+
+	async createJson(path: string, doc: unknown): Promise<string> {
+		if (await this.exists(path)) throw new ConflictError(`${path} already exists.`);
+		const sha = await this.write(await this.make(path), doc);
 		this.tree?.set(path, '');
 		return sha;
 	}
@@ -145,8 +172,11 @@ export class FolderStore implements Store {
 		return null;
 	}
 
-	private async write(handle: FolderFile, doc: unknown): Promise<string> {
-		const text = dump(doc);
+	private write(handle: FolderFile, doc: unknown): Promise<string> {
+		return this.put(handle, dump(doc));
+	}
+
+	private async put(handle: FolderFile, text: string): Promise<string> {
 		const writer = await handle.createWritable();
 		await writer.write(text);
 		await writer.close();

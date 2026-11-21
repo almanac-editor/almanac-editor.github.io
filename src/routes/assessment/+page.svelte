@@ -218,6 +218,9 @@
 			lede={notification?.subject}
 		>
 			{#snippet actions()}
+				<a class="btn" href={links.assessmentEdit(o, a)}>
+					<Icon name="pencil" size={16} /> Edit
+				</a>
 				{#if github}
 					<a class="btn" href={github(spec.notification)} target="_blank" rel="noopener noreferrer">
 						<Icon name="link" size={16} /> Notification on GitHub
@@ -302,9 +305,8 @@
 					<div class="msg warn">
 						<div>
 							The notification <code>{spec.notification}</code> is not
-							{session.source === 'folder'
-								? 'in the folders Almanac reads (subjects/, offerings/ and schemas/).'
-								: 'in the repo.'} The task’s topic lines are shown from its spec.
+							{session.source === 'folder' ? 'in the folder.' : 'in the repo.'} The task’s topic lines
+							are shown from its spec. Editing the task makes it.
 						</div>
 					</div>
 				{/if}

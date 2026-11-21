@@ -4,7 +4,7 @@
  * the task, the units it examines, its notification, and every topic line in
  * the notification mapped to registry ids.
  *
- * Read-only for now. The checks are the ones the data repo's
+ * Editing is in assessmentEdit.ts. The checks are the ones the data repo's
  * `tests/test_assessment_specs.py` makes, so the page shows what that test
  * would fail on.
  */
@@ -16,7 +16,8 @@ export interface Topic {
 	text: string;
 	/** A unit the task examines, relative to the offering's subject directory. */
 	unit: string;
-	phase?: string;
+	/** The registry's phase wording; the schema requires it. */
+	phase: string;
 	ids: string[];
 	note?: string;
 	[key: string]: unknown;

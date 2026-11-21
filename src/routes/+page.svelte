@@ -164,6 +164,9 @@
 							<a class="copy" href={links.editClass(path)}>
 								<Icon name="pencil" size={14} /> Edit class
 							</a>
+							<a class="copy" href={links.assessmentEdit(path)}>
+								<Icon name="plus" size={14} /> New assessment
+							</a>
 							<a class="copy" href={links.newClass(path)}>
 								<Icon name="plus" size={14} /> Copy to {offering.year + 1}
 							</a>

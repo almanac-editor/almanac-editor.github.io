@@ -6,9 +6,21 @@
  */
 
 import { execFileSync } from 'node:child_process';
-import { existsSync, readdirSync, readFileSync, statSync } from 'node:fs';
+import {
+	existsSync,
+	mkdtempSync,
+	readdirSync,
+	readFileSync,
+	rmSync,
+	statSync,
+	writeFileSync
+} from 'node:fs';
+import { tmpdir } from 'node:os';
 import { join as joinFs, relative } from 'node:path';
 import { describe, expect, it } from 'vitest';
+import { blankTopic, fromAssessmentDraft, syncMarks, toAssessmentDraft } from './assessmentEdit.ts';
+import { partText } from './notificationEdit.ts';
+import { joinBlocks, readBlocks } from './textBlocks.ts';
 import { fromCalendarDraft, toCalendarDraft } from './calendarEdit.ts';
 import { agreedLessons, classify, gather, lessonSources } from './coverage.ts';
 import {
@@ -535,6 +547,124 @@ print(json.dumps(out))
 			const actual = Object.fromEntries(
 				Object.keys(expected).map((note) => [note, topicLines(read(note))])
 			);
+			expect(actual).toEqual(expected);
+		});
+
+		const loaded = () =>
+			specs.flatMap((path) => {
+				const spec = JSON.parse(read(path)) as AssessmentSpec;
+				if (!existsSync(joinFs(repo, spec.notification))) return [];
+				return [{ path, spec, notification: read(spec.notification) }];
+			});
+
+		it('saves every untouched spec and notification as the same bytes', () => {
+			// Compared with the house format, as for outcome.json: a spec written by
+			// hand (ids on one line) is reformatted by its first save from the app.
+			const changed = loaded().flatMap(({ path, spec, notification }) => {
+				const out = fromAssessmentDraft(toAssessmentDraft(spec, notification).draft);
+				return [
+					...(dump(out.spec) === dump(spec) ? [] : [path]),
+					...(out.notification === notification ? [] : [spec.notification])
+				];
+			});
+			expect(changed).toEqual([]);
+		});
+
+		it('reads every part of every Marking criteria as parts, criteria and mark ranges', () => {
+			const loose: string[] = [];
+			for (const { spec, notification } of loaded()) {
+				const { draft } = toAssessmentDraft(spec, notification);
+				for (const x of draft.sections) {
+					if (x.body.kind !== 'criteria') continue;
+					for (const part of x.body.parts) {
+						if (part.kind !== 'part')
+							loose.push(`${spec.notification}: ${part.text.split('\n')[0]}`);
+					}
+				}
+			}
+			expect(loose).toEqual([]);
+		});
+
+		it('reads every section’s text as blocks that join back the same', () => {
+			const changed: string[] = [];
+			const raw: string[] = [];
+			for (const { spec, notification } of loaded()) {
+				const { draft } = toAssessmentDraft(spec, notification);
+				for (const x of draft.sections) {
+					if (x.body.kind !== 'text') continue;
+					const blocks = readBlocks(x.body.text);
+					if (joinBlocks(blocks) !== x.body.text)
+						changed.push(`${spec.notification}: ${x.heading}`);
+					for (const b of blocks) {
+						if (b.kind === 'raw') raw.push(`${x.heading}: ${b.text.split('\n')[0].slice(0, 40)}`);
+					}
+				}
+			}
+			expect(changed).toEqual([]);
+			// Kept as text: shown so a change to the reader that loses structure is noticed.
+			expect(raw.length).toBeLessThanOrEqual(3);
+		});
+
+		it('finds every real notification’s marks already following its parts', () => {
+			const moved: string[] = [];
+			for (const { spec, notification } of loaded()) {
+				const { draft } = toAssessmentDraft(spec, notification);
+				if (syncMarks(draft)) moved.push(spec.notification);
+			}
+			expect(moved).toEqual([]);
+		});
+
+		it('writes every edited part so it reads back the same', () => {
+			const changed: string[] = [];
+			for (const { spec, notification } of loaded()) {
+				const { draft } = toAssessmentDraft(spec, notification);
+				for (const x of draft.sections) {
+					if (x.body.kind !== 'criteria') continue;
+					for (const part of x.body.parts) {
+						if (part.kind !== 'part') continue;
+						// Forget where it came from, so it is written fresh.
+						const fresh = { ...part, __raw: undefined, __was: undefined };
+						if (partText(fresh) !== part.__raw) changed.push(`${spec.notification}: ${part.label}`);
+					}
+				}
+			}
+			expect(changed).toEqual([]);
+		});
+
+		it('writes edited topics so test_assessment_specs.py reads them back', () => {
+			// Every topic reworded and one added, then the data repo's own
+			// _topic_lines run on each notification the editor would write.
+			const out = mkdtempSync(joinFs(tmpdir(), 'almanac-topics-'));
+			const expected: Record<string, string[]> = {};
+			loaded().forEach(({ spec, notification }, i) => {
+				const { draft } = toAssessmentDraft(spec, notification);
+				const section = draft.sections.find((x) => x.body.kind === 'topics');
+				if (section?.body.kind !== 'topics') throw new Error(`${spec.notification}: no topics`);
+				const all = section.body.rows;
+				const rows = all.filter((r) => r.kind === 'topic');
+				for (const row of rows) row.text = `${row.text} (edited)`;
+				const last = all.lastIndexOf(rows.at(-1)!);
+				all.splice(last + 1, 0, {
+					...blankTopic(rows.at(-1)),
+					text: 'A new topic',
+					ids: [],
+					note: 'Added by the test.'
+				});
+				const made = fromAssessmentDraft(draft);
+				writeFileSync(joinFs(out, `${i}.md`), made.notification);
+				expected[`${i}.md`] = made.spec.topics.map((t) => t.text);
+			});
+			const actual: Record<string, string[]> = python(`
+import ast, re
+tree = ast.parse(Path("tests/test_assessment_specs.py").read_text(encoding="utf-8"))
+fn = next(n for n in tree.body if isinstance(n, ast.FunctionDef) and n.name == "_topic_lines")
+ns = {"re": re}
+exec(compile(ast.Module(body=[fn], type_ignores=[]), "_topic_lines", "exec"), ns)
+out = Path(${JSON.stringify(out)})
+print(json.dumps({p.name: ns["_topic_lines"](p.read_text(encoding="utf-8")) for p in sorted(out.glob("*.md"))}))
+`);
+			rmSync(out, { recursive: true });
+			expect(Object.keys(actual).length).toBeGreaterThan(0);
 			expect(actual).toEqual(expected);
 		});
 

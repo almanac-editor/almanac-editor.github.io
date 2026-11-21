@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { FolderStore, type FolderFile, type FolderHandle } from './folder.ts';
-import { ConflictError, NotFoundError } from './repo.ts';
+import { ConflictError, NotFoundError, PartlySavedError } from './repo.ts';
 
 type Tree = { [name: string]: string | Tree };
 
@@ -111,5 +111,55 @@ describe('FolderStore', () => {
 	it('says which file is missing', async () => {
 		const store = new FolderStore(folder('almanac', plans()));
 		await expect(store.readText('subjects/nope/unit.json')).rejects.toBeInstanceOf(NotFoundError);
+	});
+	it('writes JSON and text together, and reads a file outside the folders it lists', async () => {
+		const tree: Tree = { ...plans(), year9: { 'note.md': '# Old\n' } };
+		const store = new FolderStore(folder('almanac', tree));
+		const note = await store.readText('year9/note.md');
+		const spec = await store.readJson<object>('offerings/y7.json');
+		await store.writeMany([
+			{ path: 'offerings/y7.json', doc: { id: 'y7', year: 2026 }, sha: spec.sha },
+			{ path: 'year9/note.md', text: '# New\n', sha: note.sha },
+			{ path: 'offerings/y7/assessments/final.md', text: '# Final\n', sha: null }
+		]);
+		expect((tree.year9 as Tree)['note.md']).toBe('# New\n');
+		expect(((tree.offerings as Tree).y7 as Tree).assessments).toEqual({ 'final.md': '# Final\n' });
+		expect(await store.has('offerings/y7/assessments/final.md')).toBe(true);
+	});
+
+	it('writes nothing when one of several files changed', async () => {
+		const tree = plans();
+		const store = new FolderStore(folder('almanac', tree));
+		const spec = await store.readJson<object>('offerings/y7.json');
+		await expect(
+			store.writeMany([
+				{ path: 'offerings/y7.json', doc: { id: 'y7', year: 2026 }, sha: spec.sha },
+				{ path: 'calendar/2027.json', text: '{}\n', sha: 'stale' }
+			])
+		).rejects.toBeInstanceOf(ConflictError);
+		expect((tree.offerings as Tree)['y7.json']).toBe('{\n  "id": "y7"\n}\n');
+	});
+
+	it('says which file was saved when a later write fails', async () => {
+		const tree = plans();
+		const root = folder('almanac', tree);
+		const store = new FolderStore(root);
+		const spec = await store.readJson<object>('offerings/y7.json');
+		const calendar = await store.readText('calendar/2027.json');
+		const getDirectoryHandle = root.getDirectoryHandle;
+		let reads = 0;
+		root.getDirectoryHandle = async (name, options) => {
+			// The checks pass; the second write finds its folder gone.
+			if (name === 'calendar' && ++reads > 1) throw new Error('The disk is full.');
+			return getDirectoryHandle(name, options);
+		};
+		const saving = store.writeMany([
+			{ path: 'offerings/y7.json', doc: { id: 'y7', year: 2026 }, sha: spec.sha },
+			{ path: 'calendar/2027.json', text: '{}\n', sha: calendar.sha }
+		]);
+		await expect(saving).rejects.toBeInstanceOf(PartlySavedError);
+		await expect(saving).rejects.toThrow(
+			'offerings/y7.json was saved, but calendar/2027.json was not: The disk is full.'
+		);
 	});
 });
