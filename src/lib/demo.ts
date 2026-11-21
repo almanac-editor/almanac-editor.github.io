@@ -672,6 +672,154 @@ const deliveries: Record<string, DeliveryRecord> = {
 	}
 };
 
+/** A made-up assessment spec for Year 7 Class A, and the notification it copies its topics from. */
+const SPEC_DIR = 'offerings/2026_y07_class_a/assessments';
+
+const torchSpec = {
+	offering: '2026-y7-class-a',
+	title: 'Torch redesign',
+	notification: `${SPEC_DIR}/torch_redesign.md`,
+	units: ['units/product_design', 'units/simple_circuits'],
+	topics: [
+		{
+			text: 'Write a design brief for a torch a younger student could use',
+			unit: 'units/product_design',
+			phase: 'Stage 4',
+			ids: ['DT-4.1']
+		},
+		{
+			text: 'Sketch and model three ideas, and test the best one',
+			unit: 'units/product_design',
+			phase: 'Stage 4',
+			ids: ['DT-4.2', 'DT-4.3']
+		},
+		{
+			text: 'Build a series circuit with a switch inside your casing',
+			unit: 'units/simple_circuits',
+			phase: 'Stage 4',
+			ids: ['DT-4.7', 'DT-4.8']
+		},
+		{
+			text: 'Present your torch to the class',
+			unit: 'units/product_design',
+			phase: 'Stage 4',
+			ids: [],
+			note: 'Speaking is marked in the criteria, not linked to a dot point.'
+		}
+	]
+};
+
+const TORCH_NOTIFICATION = `# 2026 Year 7 Design and Technology
+
+## Assessment Task 1: Torch Redesign
+
+| | |
+|---|---|
+| **Due** | Friday 12 June 2026, end of lesson |
+| **Weighting** | 30% (20% in class, 10% at home) |
+| **Marks** | 40 (25 in class, 15 at home) |
+| **Teacher** | Sample Teacher |
+
+---
+
+## Task overview
+
+Redesign a torch so a younger student can use it, then build and test it.
+
+| Part | Where | Marks |
+|---|---|---|
+| 1. Design brief | At home | 5 |
+| 2. Ideas and prototype | In class | 15 |
+| 3. Circuit and casing | In class | 10 |
+| 4. Presentation | At home | 10 |
+| **Total** | | **40** |
+
+## What to submit
+
+Submit everything in your class folder by the due date.
+
+### Part 1: Design brief (at home)
+
+- a one-page brief naming who the torch is for and what they need
+- two photos of torches they find hard to use
+
+### Parts 2 and 3: Folio (in class)
+
+- three sketched ideas, labelled
+- photos of your cardboard prototype and your finished torch
+- your test results table
+
+### Part 4: Presentation (at home)
+
+- a two-minute video showing your torch working
+
+## Academic integrity
+
+Your sketches and your torch must be your own work. Say where any idea came from.
+
+## Marking criteria
+
+### Part 1: Design brief (5 marks, at home)
+
+DT-4-1 identifies a need and writes a design brief
+
+| Marks | Criteria |
+|---|---|
+| 5 | Writes a clear brief that names the user, their need and three measurable criteria. |
+| 4-3 | Writes a brief that names the user and their need, with some criteria. |
+| 2-0 | Writes a brief with little detail. |
+
+### Part 2: Ideas and prototype (15 marks, in class)
+
+DT-4-2 generates and sketches a range of ideas
+
+**Sketches (5 marks)**
+
+| Marks | Criteria |
+|---|---|
+| 5 | Sketches three different, labelled ideas that answer the brief. |
+| 4-3 | Sketches two or three ideas with some labels. |
+| 2-0 | Sketches one idea. |
+
+**Prototype (10 marks)**
+
+| Marks | Criteria |
+|---|---|
+| 10-9 | Builds a careful prototype, tests it against every criterion and records what to change. |
+| 8-6 | Builds a prototype and tests it against most criteria. |
+| 5-3 | Builds a prototype with some testing. |
+| 2-0 | Builds part of a prototype. |
+
+### Part 3: Circuit and casing (10 marks, in class)
+
+DT-4-7 builds and explains a series circuit
+
+| Marks | Criteria |
+|---|---|
+| 10-9 | Builds a working series circuit with a switch, fitted neatly inside the casing. |
+| 8-6 | Builds a working circuit with a switch inside the casing. |
+| 5-3 | Builds a circuit that works some of the time. |
+| 2-0 | Builds part of a circuit. |
+
+### Part 4: Presentation (10 marks, at home)
+
+| Marks | Criteria |
+|---|---|
+| 10-9 | Shows the torch working and explains every design decision clearly. |
+| 8-6 | Shows the torch working and explains most decisions. |
+| 5-0 | Shows the torch with little explanation. |
+
+# Teacher notes
+
+## Changes from last year
+
+- Added the presentation part.
+
+## Assessable topics
+
+${torchSpec.topics.map((t) => `- ${t.text}`).join('\n')}
+`;
+
 const LESSON_SCHEMA = {
 	$schema: 'https://json-schema.org/draft/2020-12/schema',
 	type: 'object',
@@ -706,6 +854,8 @@ function files(): Map<string, string> {
 	unit('subjects/media_arts/units/stop_motion', stopMotion, stopMotionLessons);
 	for (const [path, doc] of Object.entries(offerings)) put(path, doc);
 	for (const [path, doc] of Object.entries(deliveries)) put(path, doc);
+	put(`${SPEC_DIR}/torch_redesign.json`, torchSpec);
+	out.set(`${SPEC_DIR}/torch_redesign.md`, TORCH_NOTIFICATION);
 	for (const [path, doc] of Object.entries(calendars)) put(path, doc);
 	put('schemas/lesson.schema.json', LESSON_SCHEMA);
 	out.set(

@@ -1,58 +1,405 @@
 {
   "schemaVersion": 2,
-  "generatedAt": "2026-11-12T00:30:00+11:00",
+  "generatedAt": "2026-11-21T12:00:00+11:00",
   "title": "Design System: Almanac Editor",
   "extensions": {
     "colorMeta": {
-      "chalk": { "role": "neutral", "displayName": "Chalk", "canonical": "#f3f4f0", "dark": "#121317", "tonalRamp": ["oklch(15% 0.006 120)", "oklch(25% 0.006 120)", "oklch(35% 0.006 120)", "oklch(45% 0.006 120)", "oklch(55% 0.006 120)", "oklch(65% 0.006 120)", "oklch(80% 0.006 120)", "oklch(96.5% 0.006 120)"] },
-      "paper": { "role": "neutral", "displayName": "Paper", "canonical": "#fcfcfa", "dark": "#1a1c21" },
-      "sunk": { "role": "neutral", "displayName": "Sunk", "canonical": "#e9eae4", "dark": "#0d0e11" },
-      "ink": { "role": "neutral", "displayName": "Ink", "canonical": "#15171c", "dark": "#ecede8", "tonalRamp": ["oklch(15% 0.01 265)", "oklch(21% 0.01 265)", "oklch(35% 0.012 265)", "oklch(45% 0.012 265)", "oklch(55% 0.012 265)", "oklch(65% 0.01 265)", "oklch(80% 0.008 265)", "oklch(95% 0.005 265)"] },
-      "ink-2": { "role": "neutral", "displayName": "Ink 2", "canonical": "#3a3d45", "dark": "#c7c9c2" },
-      "muted": { "role": "neutral", "displayName": "Muted", "canonical": "#5f636d", "dark": "#9a9ea8" },
-      "rule": { "role": "neutral", "displayName": "Rule", "canonical": "#dcded6", "dark": "#2c2f36" },
-      "rule-strong": { "role": "neutral", "displayName": "Rule Strong", "canonical": "#b6b9af", "dark": "#464a53" },
-      "rail": { "role": "neutral", "displayName": "Rail", "canonical": "#15171c", "dark": "#0b0c0f" },
-      "rail-ink": { "role": "neutral", "displayName": "Rail Ink", "canonical": "#f3f4f0", "dark": "#ecede8" },
-      "rail-muted": { "role": "neutral", "displayName": "Rail Muted", "canonical": "#a3a7b0", "dark": "#8d919b" },
-      "warn": { "role": "status", "displayName": "Warn", "canonical": "#c4321d", "dark": "#f0715c", "tonalRamp": ["oklch(15% 0.06 32)", "oklch(25% 0.1 32)", "oklch(35% 0.14 32)", "oklch(45% 0.17 32)", "oklch(54% 0.19 32)", "oklch(65% 0.16 32)", "oklch(80% 0.09 32)", "oklch(95% 0.03 32)"] },
-      "warn-soft": { "role": "status", "displayName": "Warn Soft", "canonical": "#fbe5e0", "dark": "#3a1c17" },
-      "warn-deep": { "role": "status", "displayName": "Warn Deep", "canonical": "#8a1f10", "dark": "#ffb4a6" },
-      "good": { "role": "status", "displayName": "Good", "canonical": "#0b7a55", "dark": "#4cc59a" },
-      "good-soft": { "role": "status", "displayName": "Good Soft", "canonical": "#ddf1e8", "dark": "#15332a" },
-      "note-soft": { "role": "status", "displayName": "Note Soft", "canonical": "#fbefd3", "dark": "#3a2f17" },
-      "note-deep": { "role": "status", "displayName": "Note Deep", "canonical": "#6e4b03", "dark": "#f3cf86" },
-      "house-none": { "role": "primary", "displayName": "House None (ink field)", "canonical": "#15171c", "dark": "#2a2d34" },
-      "house-none-soft": { "role": "primary", "displayName": "House None Soft", "canonical": "#e7e8e3", "dark": "#22252b" },
-      "house-cobalt": { "role": "primary", "displayName": "Cobalt", "canonical": "#1e3bb3", "dark": "#3552d6", "tonalRamp": ["oklch(15% 0.07 266)", "oklch(25% 0.12 266)", "oklch(35% 0.17 266)", "oklch(42% 0.19 266)", "oklch(55% 0.17 266)", "oklch(65% 0.13 266)", "oklch(80% 0.07 266)", "oklch(95% 0.02 266)"] },
-      "house-cobalt-soft": { "role": "primary", "displayName": "Cobalt Soft", "canonical": "#e3e8fa", "dark": "#1b2450" },
-      "house-cobalt-deep": { "role": "primary", "displayName": "Cobalt Deep", "canonical": "#142a85", "dark": "#b7c4ff" },
-      "house-emerald": { "role": "primary", "displayName": "Emerald", "canonical": "#0b7a55", "dark": "#0f8a61", "tonalRamp": ["oklch(15% 0.04 163)", "oklch(25% 0.06 163)", "oklch(35% 0.08 163)", "oklch(45% 0.1 163)", "oklch(51% 0.11 163)", "oklch(65% 0.1 163)", "oklch(80% 0.06 163)", "oklch(95% 0.02 163)"] },
-      "house-emerald-soft": { "role": "primary", "displayName": "Emerald Soft", "canonical": "#dcf1e7", "dark": "#11342a" },
-      "house-emerald-deep": { "role": "primary", "displayName": "Emerald Deep", "canonical": "#075a3e", "dark": "#9fe3c7" },
-      "house-ruby": { "role": "primary", "displayName": "Ruby", "canonical": "#b3263e", "dark": "#c93450", "tonalRamp": ["oklch(15% 0.06 18)", "oklch(25% 0.1 18)", "oklch(35% 0.14 18)", "oklch(45% 0.17 18)", "oklch(51% 0.18 18)", "oklch(65% 0.14 18)", "oklch(80% 0.08 18)", "oklch(95% 0.02 18)"] },
-      "house-ruby-soft": { "role": "primary", "displayName": "Ruby Soft", "canonical": "#f8e1e5", "dark": "#3e1820" },
-      "house-ruby-deep": { "role": "primary", "displayName": "Ruby Deep", "canonical": "#861a2d", "dark": "#ffb8c4" },
-      "house-saffron": { "role": "primary", "displayName": "Saffron", "canonical": "#e8a317", "dark": "#e8a317", "tonalRamp": ["oklch(15% 0.04 76)", "oklch(25% 0.06 76)", "oklch(35% 0.08 76)", "oklch(45% 0.1 76)", "oklch(58% 0.12 76)", "oklch(76% 0.16 76)", "oklch(85% 0.1 76)", "oklch(95% 0.04 76)"] },
-      "house-saffron-on": { "role": "primary", "displayName": "Saffron On", "canonical": "#1e1605" },
-      "house-saffron-soft": { "role": "primary", "displayName": "Saffron Soft", "canonical": "#fbefd3", "dark": "#3a2c0f" },
-      "house-saffron-deep": { "role": "primary", "displayName": "Saffron Deep", "canonical": "#7a5304", "dark": "#f7d58a" },
-      "house-plum": { "role": "primary", "displayName": "Plum", "canonical": "#5e2d91", "dark": "#7a44b5", "tonalRamp": ["oklch(15% 0.06 302)", "oklch(25% 0.1 302)", "oklch(35% 0.14 302)", "oklch(41% 0.16 302)", "oklch(55% 0.15 302)", "oklch(65% 0.12 302)", "oklch(80% 0.07 302)", "oklch(95% 0.02 302)"] },
-      "house-plum-soft": { "role": "primary", "displayName": "Plum Soft", "canonical": "#ece2f7", "dark": "#2c1a40" },
-      "house-plum-deep": { "role": "primary", "displayName": "Plum Deep", "canonical": "#44206a", "dark": "#dcc4fa" },
-      "house-lagoon": { "role": "primary", "displayName": "Lagoon", "canonical": "#0e7490", "dark": "#138aa9", "tonalRamp": ["oklch(15% 0.03 222)", "oklch(25% 0.05 222)", "oklch(35% 0.07 222)", "oklch(45% 0.08 222)", "oklch(52% 0.09 222)", "oklch(65% 0.08 222)", "oklch(80% 0.05 222)", "oklch(95% 0.02 222)"] },
-      "house-lagoon-soft": { "role": "primary", "displayName": "Lagoon Soft", "canonical": "#dcf0f5", "dark": "#0f303a" },
-      "house-lagoon-deep": { "role": "primary", "displayName": "Lagoon Deep", "canonical": "#0a5568", "dark": "#a5e2f1" },
-      "house-tangerine": { "role": "primary", "displayName": "Tangerine", "canonical": "#c2410c", "dark": "#d4501a", "tonalRamp": ["oklch(15% 0.04 42)", "oklch(25% 0.07 42)", "oklch(35% 0.1 42)", "oklch(45% 0.13 42)", "oklch(52% 0.15 42)", "oklch(65% 0.12 42)", "oklch(80% 0.07 42)", "oklch(95% 0.02 42)"] },
-      "house-tangerine-soft": { "role": "primary", "displayName": "Tangerine Soft", "canonical": "#fde6d8", "dark": "#3b1f12" },
-      "house-tangerine-deep": { "role": "primary", "displayName": "Tangerine Deep", "canonical": "#8a2e07", "dark": "#ffc4a3" },
-      "house-moss": { "role": "primary", "displayName": "Moss", "canonical": "#4d7c0f", "dark": "#5b8f17", "tonalRamp": ["oklch(15% 0.04 130)", "oklch(25% 0.07 130)", "oklch(35% 0.1 130)", "oklch(45% 0.13 130)", "oklch(52% 0.15 130)", "oklch(65% 0.12 130)", "oklch(80% 0.07 130)", "oklch(95% 0.02 130)"] },
-      "house-moss-soft": { "role": "primary", "displayName": "Moss Soft", "canonical": "#e6f0d5", "dark": "#1f2c10" },
-      "house-moss-deep": { "role": "primary", "displayName": "Moss Deep", "canonical": "#365a0a", "dark": "#c8e6a0" },
-      "house-on": { "role": "primary", "displayName": "House On (white)", "canonical": "#ffffff" }
+      "chalk": {
+        "role": "neutral",
+        "displayName": "Chalk",
+        "canonical": "#f3f4f0",
+        "dark": "#121317",
+        "tonalRamp": [
+          "oklch(15% 0.006 120)",
+          "oklch(25% 0.006 120)",
+          "oklch(35% 0.006 120)",
+          "oklch(45% 0.006 120)",
+          "oklch(55% 0.006 120)",
+          "oklch(65% 0.006 120)",
+          "oklch(80% 0.006 120)",
+          "oklch(96.5% 0.006 120)"
+        ]
+      },
+      "paper": {
+        "role": "neutral",
+        "displayName": "Paper",
+        "canonical": "#fcfcfa",
+        "dark": "#1a1c21"
+      },
+      "sunk": {
+        "role": "neutral",
+        "displayName": "Sunk",
+        "canonical": "#e9eae4",
+        "dark": "#0d0e11"
+      },
+      "ink": {
+        "role": "neutral",
+        "displayName": "Ink",
+        "canonical": "#15171c",
+        "dark": "#ecede8",
+        "tonalRamp": [
+          "oklch(15% 0.01 265)",
+          "oklch(21% 0.01 265)",
+          "oklch(35% 0.012 265)",
+          "oklch(45% 0.012 265)",
+          "oklch(55% 0.012 265)",
+          "oklch(65% 0.01 265)",
+          "oklch(80% 0.008 265)",
+          "oklch(95% 0.005 265)"
+        ]
+      },
+      "ink-2": {
+        "role": "neutral",
+        "displayName": "Ink 2",
+        "canonical": "#3a3d45",
+        "dark": "#c7c9c2"
+      },
+      "muted": {
+        "role": "neutral",
+        "displayName": "Muted",
+        "canonical": "#5f636d",
+        "dark": "#9a9ea8"
+      },
+      "rule": {
+        "role": "neutral",
+        "displayName": "Rule",
+        "canonical": "#dcded6",
+        "dark": "#2c2f36"
+      },
+      "rule-strong": {
+        "role": "neutral",
+        "displayName": "Rule Strong",
+        "canonical": "#b6b9af",
+        "dark": "#464a53"
+      },
+      "rail": {
+        "role": "neutral",
+        "displayName": "Rail",
+        "canonical": "#15171c",
+        "dark": "#0b0c0f"
+      },
+      "rail-ink": {
+        "role": "neutral",
+        "displayName": "Rail Ink",
+        "canonical": "#f3f4f0",
+        "dark": "#ecede8"
+      },
+      "rail-muted": {
+        "role": "neutral",
+        "displayName": "Rail Muted",
+        "canonical": "#a3a7b0",
+        "dark": "#8d919b"
+      },
+      "warn": {
+        "role": "status",
+        "displayName": "Warn",
+        "canonical": "#c4321d",
+        "dark": "#f0715c",
+        "tonalRamp": [
+          "oklch(15% 0.06 32)",
+          "oklch(25% 0.1 32)",
+          "oklch(35% 0.14 32)",
+          "oklch(45% 0.17 32)",
+          "oklch(54% 0.19 32)",
+          "oklch(65% 0.16 32)",
+          "oklch(80% 0.09 32)",
+          "oklch(95% 0.03 32)"
+        ]
+      },
+      "warn-soft": {
+        "role": "status",
+        "displayName": "Warn Soft",
+        "canonical": "#fbe5e0",
+        "dark": "#3a1c17"
+      },
+      "warn-deep": {
+        "role": "status",
+        "displayName": "Warn Deep",
+        "canonical": "#8a1f10",
+        "dark": "#ffb4a6"
+      },
+      "good": {
+        "role": "status",
+        "displayName": "Good",
+        "canonical": "#0b7a55",
+        "dark": "#4cc59a"
+      },
+      "good-soft": {
+        "role": "status",
+        "displayName": "Good Soft",
+        "canonical": "#ddf1e8",
+        "dark": "#15332a"
+      },
+      "note-soft": {
+        "role": "status",
+        "displayName": "Note Soft",
+        "canonical": "#fbefd3",
+        "dark": "#3a2f17"
+      },
+      "note-deep": {
+        "role": "status",
+        "displayName": "Note Deep",
+        "canonical": "#6e4b03",
+        "dark": "#f3cf86"
+      },
+      "house-none": {
+        "role": "primary",
+        "displayName": "House None (ink field)",
+        "canonical": "#15171c",
+        "dark": "#2a2d34"
+      },
+      "house-none-soft": {
+        "role": "primary",
+        "displayName": "House None Soft",
+        "canonical": "#e7e8e3",
+        "dark": "#22252b"
+      },
+      "house-cobalt": {
+        "role": "primary",
+        "displayName": "Cobalt",
+        "canonical": "#1e3bb3",
+        "dark": "#3552d6",
+        "tonalRamp": [
+          "oklch(15% 0.07 266)",
+          "oklch(25% 0.12 266)",
+          "oklch(35% 0.17 266)",
+          "oklch(42% 0.19 266)",
+          "oklch(55% 0.17 266)",
+          "oklch(65% 0.13 266)",
+          "oklch(80% 0.07 266)",
+          "oklch(95% 0.02 266)"
+        ]
+      },
+      "house-cobalt-soft": {
+        "role": "primary",
+        "displayName": "Cobalt Soft",
+        "canonical": "#e3e8fa",
+        "dark": "#1b2450"
+      },
+      "house-cobalt-deep": {
+        "role": "primary",
+        "displayName": "Cobalt Deep",
+        "canonical": "#142a85",
+        "dark": "#b7c4ff"
+      },
+      "house-emerald": {
+        "role": "primary",
+        "displayName": "Emerald",
+        "canonical": "#0b7a55",
+        "dark": "#0f8a61",
+        "tonalRamp": [
+          "oklch(15% 0.04 163)",
+          "oklch(25% 0.06 163)",
+          "oklch(35% 0.08 163)",
+          "oklch(45% 0.1 163)",
+          "oklch(51% 0.11 163)",
+          "oklch(65% 0.1 163)",
+          "oklch(80% 0.06 163)",
+          "oklch(95% 0.02 163)"
+        ]
+      },
+      "house-emerald-soft": {
+        "role": "primary",
+        "displayName": "Emerald Soft",
+        "canonical": "#dcf1e7",
+        "dark": "#11342a"
+      },
+      "house-emerald-deep": {
+        "role": "primary",
+        "displayName": "Emerald Deep",
+        "canonical": "#075a3e",
+        "dark": "#9fe3c7"
+      },
+      "house-ruby": {
+        "role": "primary",
+        "displayName": "Ruby",
+        "canonical": "#b3263e",
+        "dark": "#c93450",
+        "tonalRamp": [
+          "oklch(15% 0.06 18)",
+          "oklch(25% 0.1 18)",
+          "oklch(35% 0.14 18)",
+          "oklch(45% 0.17 18)",
+          "oklch(51% 0.18 18)",
+          "oklch(65% 0.14 18)",
+          "oklch(80% 0.08 18)",
+          "oklch(95% 0.02 18)"
+        ]
+      },
+      "house-ruby-soft": {
+        "role": "primary",
+        "displayName": "Ruby Soft",
+        "canonical": "#f8e1e5",
+        "dark": "#3e1820"
+      },
+      "house-ruby-deep": {
+        "role": "primary",
+        "displayName": "Ruby Deep",
+        "canonical": "#861a2d",
+        "dark": "#ffb8c4"
+      },
+      "house-saffron": {
+        "role": "primary",
+        "displayName": "Saffron",
+        "canonical": "#e8a317",
+        "dark": "#e8a317",
+        "tonalRamp": [
+          "oklch(15% 0.04 76)",
+          "oklch(25% 0.06 76)",
+          "oklch(35% 0.08 76)",
+          "oklch(45% 0.1 76)",
+          "oklch(58% 0.12 76)",
+          "oklch(76% 0.16 76)",
+          "oklch(85% 0.1 76)",
+          "oklch(95% 0.04 76)"
+        ]
+      },
+      "house-saffron-on": {
+        "role": "primary",
+        "displayName": "Saffron On",
+        "canonical": "#1e1605"
+      },
+      "house-saffron-soft": {
+        "role": "primary",
+        "displayName": "Saffron Soft",
+        "canonical": "#fbefd3",
+        "dark": "#3a2c0f"
+      },
+      "house-saffron-deep": {
+        "role": "primary",
+        "displayName": "Saffron Deep",
+        "canonical": "#7a5304",
+        "dark": "#f7d58a"
+      },
+      "house-plum": {
+        "role": "primary",
+        "displayName": "Plum",
+        "canonical": "#5e2d91",
+        "dark": "#7a44b5",
+        "tonalRamp": [
+          "oklch(15% 0.06 302)",
+          "oklch(25% 0.1 302)",
+          "oklch(35% 0.14 302)",
+          "oklch(41% 0.16 302)",
+          "oklch(55% 0.15 302)",
+          "oklch(65% 0.12 302)",
+          "oklch(80% 0.07 302)",
+          "oklch(95% 0.02 302)"
+        ]
+      },
+      "house-plum-soft": {
+        "role": "primary",
+        "displayName": "Plum Soft",
+        "canonical": "#ece2f7",
+        "dark": "#2c1a40"
+      },
+      "house-plum-deep": {
+        "role": "primary",
+        "displayName": "Plum Deep",
+        "canonical": "#44206a",
+        "dark": "#dcc4fa"
+      },
+      "house-lagoon": {
+        "role": "primary",
+        "displayName": "Lagoon",
+        "canonical": "#0e7490",
+        "dark": "#138aa9",
+        "tonalRamp": [
+          "oklch(15% 0.03 222)",
+          "oklch(25% 0.05 222)",
+          "oklch(35% 0.07 222)",
+          "oklch(45% 0.08 222)",
+          "oklch(52% 0.09 222)",
+          "oklch(65% 0.08 222)",
+          "oklch(80% 0.05 222)",
+          "oklch(95% 0.02 222)"
+        ]
+      },
+      "house-lagoon-soft": {
+        "role": "primary",
+        "displayName": "Lagoon Soft",
+        "canonical": "#dcf0f5",
+        "dark": "#0f303a"
+      },
+      "house-lagoon-deep": {
+        "role": "primary",
+        "displayName": "Lagoon Deep",
+        "canonical": "#0a5568",
+        "dark": "#a5e2f1"
+      },
+      "house-tangerine": {
+        "role": "primary",
+        "displayName": "Tangerine",
+        "canonical": "#c2410c",
+        "dark": "#d4501a",
+        "tonalRamp": [
+          "oklch(15% 0.04 42)",
+          "oklch(25% 0.07 42)",
+          "oklch(35% 0.1 42)",
+          "oklch(45% 0.13 42)",
+          "oklch(52% 0.15 42)",
+          "oklch(65% 0.12 42)",
+          "oklch(80% 0.07 42)",
+          "oklch(95% 0.02 42)"
+        ]
+      },
+      "house-tangerine-soft": {
+        "role": "primary",
+        "displayName": "Tangerine Soft",
+        "canonical": "#fde6d8",
+        "dark": "#3b1f12"
+      },
+      "house-tangerine-deep": {
+        "role": "primary",
+        "displayName": "Tangerine Deep",
+        "canonical": "#8a2e07",
+        "dark": "#ffc4a3"
+      },
+      "house-moss": {
+        "role": "primary",
+        "displayName": "Moss",
+        "canonical": "#4d7c0f",
+        "dark": "#5b8f17",
+        "tonalRamp": [
+          "oklch(15% 0.04 130)",
+          "oklch(25% 0.07 130)",
+          "oklch(35% 0.1 130)",
+          "oklch(45% 0.13 130)",
+          "oklch(52% 0.15 130)",
+          "oklch(65% 0.12 130)",
+          "oklch(80% 0.07 130)",
+          "oklch(95% 0.02 130)"
+        ]
+      },
+      "house-moss-soft": {
+        "role": "primary",
+        "displayName": "Moss Soft",
+        "canonical": "#e6f0d5",
+        "dark": "#1f2c10"
+      },
+      "house-moss-deep": {
+        "role": "primary",
+        "displayName": "Moss Deep",
+        "canonical": "#365a0a",
+        "dark": "#c8e6a0"
+      },
+      "house-on": {
+        "role": "primary",
+        "displayName": "House On (white)",
+        "canonical": "#ffffff"
+      }
     },
     "houses": {
-      "order": ["cobalt", "emerald", "ruby", "saffron", "plum", "lagoon", "tangerine", "moss"],
+      "order": [
+        "cobalt",
+        "emerald",
+        "ruby",
+        "saffron",
+        "plum",
+        "lagoon",
+        "tangerine",
+        "moss"
+      ],
       "assignment": "An offering's fixed `colour` first; otherwise its index in the sorted list of offering paths (numbers compared as numbers), cycling through the eight houses and moving to the next free house only when a fixed class holds that one (src/lib/house.ts houseMap / houseOf). Pages outside a class wear 'none'.",
       "roles": {
         "--house": "flat field: header, rail band, talk segment, primary button, focus ring, caret, figures on paper",
@@ -62,45 +409,173 @@
       }
     },
     "typographyMeta": {
-      "numeral": { "displayName": "Numeral", "purpose": "Zero-padded lesson number beside the lesson title in the header." },
-      "hero": { "displayName": "Hero", "purpose": "Welcome screen headline only." },
-      "display": { "displayName": "Display", "purpose": "Page title in the house header, max 22ch." },
-      "figure": { "displayName": "Figure", "purpose": "Leading-cell figures: lesson numbers (40px), start minutes (36px), terms and totals (34px), in house colour." },
-      "headline": { "displayName": "Headline", "purpose": "Section headings (h2); 17px at 90% width in the lesson margin." },
-      "title": { "displayName": "Title", "purpose": "Lesson and unit names in lists and tiles (17-18px)." },
-      "title-sm": { "displayName": "Title Small", "purpose": "h3." },
-      "body": { "displayName": "Body", "purpose": "Reading text, tabular numerals on; summaries at 17px within 62-68ch." },
-      "control": { "displayName": "Control", "purpose": "Button and tab labels, coverage flags in words, lines in an opened row; 650 at 14px." },
-      "label": { "displayName": "Label", "purpose": "Field labels, crumbs, header meta, counts; sentence case." },
-      "micro": { "displayName": "Micro", "purpose": "Lane segment labels, tick numbers, finish flag, term codes, offering ids." },
-      "mono": { "displayName": "Mono", "purpose": "Inline code and raw JSON only." }
+      "numeral": {
+        "displayName": "Numeral",
+        "purpose": "Zero-padded lesson number beside the lesson title in the header."
+      },
+      "hero": {
+        "displayName": "Hero",
+        "purpose": "Welcome screen headline only."
+      },
+      "display": {
+        "displayName": "Display",
+        "purpose": "Page title in the house header, max 22ch."
+      },
+      "figure": {
+        "displayName": "Figure",
+        "purpose": "Leading-cell figures: lesson numbers (40px), start minutes (36px), terms and totals (34px), in house colour. On the assessment page: detail leads in the header (40px, 32px on phones) and rubric mark ranges (34px, 28px on phones)."
+      },
+      "headline": {
+        "displayName": "Headline",
+        "purpose": "Section headings (h2); 17px at 90% width in the lesson margin. Notification part headings at 20px/850, 72% width; wide detail values in the header at 22px; the teacher notes summary at 17px."
+      },
+      "title": {
+        "displayName": "Title",
+        "purpose": "Lesson and unit names in lists and tiles (17-18px)."
+      },
+      "title-sm": {
+        "displayName": "Title Small",
+        "purpose": "h3. Notification sub-headings and spec phase headings at 15px."
+      },
+      "body": {
+        "displayName": "Body",
+        "purpose": "Reading text, tabular numerals on; summaries at 17px within 62-68ch."
+      },
+      "control": {
+        "displayName": "Control",
+        "purpose": "Button and tab labels, coverage flags in words, lines in an opened row; 650 at 14px. Criterion rows, outcome lines, the contents list and the side column status line in 14px ink 2."
+      },
+      "label": {
+        "displayName": "Label",
+        "purpose": "Field labels, crumbs, header meta, counts; sentence case. Side column headings, syllabus ids beside topics, a detail's rest line, topic notes."
+      },
+      "micro": {
+        "displayName": "Micro",
+        "purpose": "Lane segment labels, tick numbers, finish flag, term codes, offering ids. Detail labels in the header, ids on spec-only topic rows, the source line."
+      },
+      "mono": {
+        "displayName": "Mono",
+        "purpose": "Inline code and raw JSON only."
+      }
     },
     "fonts": [
-      { "family": "Archivo", "source": "src/lib/assets/fonts/archivo-latin.woff2", "licence": "SIL Open Font License", "axes": { "wght": "100 900", "wdth": "62% 125%" }, "note": "Self-hosted; the CSP forbids hosted fonts." }
+      {
+        "family": "Archivo",
+        "source": "src/lib/assets/fonts/archivo-latin.woff2",
+        "licence": "SIL Open Font License",
+        "axes": {
+          "wght": "100 900",
+          "wdth": "62% 125%"
+        },
+        "note": "Self-hosted; the CSP forbids hosted fonts."
+      }
     ],
     "shadows": [
-      { "name": "panel", "value": "0 1px 2px rgb(21 23 28 / 0.06), 0 6px 18px -6px rgb(21 23 28 / 0.14)", "dark": "0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.6)", "purpose": "Lane-strip panel, editor save bar and its messages, welcome and settings cards." },
-      { "name": "dialog", "value": "0 2px 4px rgb(0 0 0 / 0.08), 0 24px 60px -12px rgb(0 0 0 / 0.35)", "purpose": "Jump dialog only, over a 45% ink backdrop with 2px blur." },
-      { "name": "focus-ring", "value": "0 0 0 3px color-mix(in oklab, var(--house) 22%, transparent)", "purpose": "Focused text inputs, with the border set to the house." }
+      {
+        "name": "panel",
+        "value": "0 1px 2px rgb(21 23 28 / 0.06), 0 6px 18px -6px rgb(21 23 28 / 0.14)",
+        "dark": "0 1px 2px rgb(0 0 0 / 0.4), 0 8px 24px -8px rgb(0 0 0 / 0.6)",
+        "purpose": "Lane-strip panel, editor save bar and its messages, welcome and settings cards."
+      },
+      {
+        "name": "dialog",
+        "value": "0 2px 4px rgb(0 0 0 / 0.08), 0 24px 60px -12px rgb(0 0 0 / 0.35)",
+        "purpose": "Jump dialog only, over a 45% ink backdrop with 2px blur."
+      },
+      {
+        "name": "focus-ring",
+        "value": "0 0 0 3px color-mix(in oklab, var(--house) 22%, transparent)",
+        "purpose": "Focused text inputs, with the border set to the house."
+      }
     ],
     "motion": [
-      { "name": "ease", "value": "cubic-bezier(0.22, 1, 0.36, 1)", "purpose": "The house ease for every transition." },
-      { "name": "state", "value": "160ms", "purpose": "Control borders, backgrounds, row hovers." },
-      { "name": "press", "value": "120ms translateY(1px)", "purpose": "Button active state." },
-      { "name": "house-handover", "value": "650ms background-color, color via @starting-style from --from", "purpose": "Page header fades from the previous page's house to its own." },
-      { "name": "band", "value": "260ms margin, padding", "purpose": "Rail class band widening on hover and current." },
-      { "name": "lane", "value": "380ms left, width", "purpose": "Lane segments and finish line sliding as timings change." },
-      { "name": "drawer", "value": "280ms transform", "purpose": "Mobile rail drawer." },
-      { "name": "dialog-rise", "value": "220ms translateY(8px) scale(0.985)", "purpose": "Jump dialog opening." },
-      { "name": "reduced-motion", "value": "0.01ms", "purpose": "All animation and transition durations under prefers-reduced-motion." }
+      {
+        "name": "ease",
+        "value": "cubic-bezier(0.22, 1, 0.36, 1)",
+        "purpose": "The house ease for every transition."
+      },
+      {
+        "name": "state",
+        "value": "160ms",
+        "purpose": "Control borders, backgrounds, row hovers."
+      },
+      {
+        "name": "press",
+        "value": "120ms translateY(1px)",
+        "purpose": "Button active state."
+      },
+      {
+        "name": "house-handover",
+        "value": "650ms background-color, color via @starting-style from --from",
+        "purpose": "Page header fades from the previous page's house to its own."
+      },
+      {
+        "name": "band",
+        "value": "260ms margin, padding",
+        "purpose": "Rail class band widening on hover and current."
+      },
+      {
+        "name": "lane",
+        "value": "380ms left, width",
+        "purpose": "Lane segments and finish line sliding as timings change."
+      },
+      {
+        "name": "drawer",
+        "value": "280ms transform",
+        "purpose": "Mobile rail drawer."
+      },
+      {
+        "name": "dialog-rise",
+        "value": "220ms translateY(8px) scale(0.985)",
+        "purpose": "Jump dialog opening."
+      },
+      {
+        "name": "chevron",
+        "value": "180ms transform rotate(180deg)",
+        "purpose": "Teacher notes disclosure chevron turning on open."
+      },
+      {
+        "name": "reduced-motion",
+        "value": "0.01ms",
+        "purpose": "All animation and transition durations under prefers-reduced-motion."
+      }
     ],
     "breakpoints": [
-      { "name": "narrow", "value": "640px", "purpose": "Home class tag stacks; run sheet drops the kind column; pairs go single column." },
-      { "name": "lanes", "value": "720px", "purpose": "Unit lane rows wrap the bar under the title; the coverage table hides its column row and stacks each flag under the text." },
-      { "name": "rail", "value": "900px", "purpose": "Rail becomes an off-canvas drawer behind a top bar." },
-      { "name": "margin", "value": "1000px", "purpose": "Lesson margin drops under the body." },
-      { "name": "wide", "value": "1700px", "purpose": "Page cap grows from 1180px to 1560px; measure and margin column widen." },
-      { "name": "wider", "value": "2200px", "purpose": "Page cap grows to 1760px and body type steps to 16px." }
+      {
+        "name": "narrow",
+        "value": "640px",
+        "purpose": "Home class tag stacks; run sheet drops the kind column; pairs go single column. Assessment details become a two-column grid; rubric mark column narrows to 76px."
+      },
+      {
+        "name": "lanes",
+        "value": "720px",
+        "purpose": "Unit lane rows wrap the bar under the title; the coverage table hides its column row and stacks each flag under the text."
+      },
+      {
+        "name": "side",
+        "value": "860px",
+        "purpose": "Assessment side column moves under the header with On this page collapsed."
+      },
+      {
+        "name": "rail",
+        "value": "900px",
+        "purpose": "Rail becomes an off-canvas drawer behind a top bar."
+      },
+      {
+        "name": "margin",
+        "value": "1000px",
+        "purpose": "Lesson margin drops under the body."
+      },
+      {
+        "name": "wide",
+        "value": "1700px",
+        "purpose": "Page cap grows from 1180px to 1560px; measure and margin column widen."
+      },
+      {
+        "name": "wider",
+        "value": "2200px",
+        "purpose": "Page cap grows to 1760px and body type steps to 16px."
+      }
     ]
   },
   "components": [
@@ -191,6 +666,38 @@
       "description": "A unit's dot points per phase, planned against taught: the syllabus id in the leading cell, each flag a small key and a label in words, rows that open on each flag's meaning and the lessons behind them. Only lesson links count; tasks are listed apart. Keys in house-deep, shortfalls in warn-deep or note-deep, a chevron on each row.",
       "html": "<div class=\"ds-cov\"><div class=\"ds-cov-cols\"><span></span><span>Dot point</span><span>Planned</span><span>Taught</span></div><details class=\"ds-cov-row\" open><summary><span class=\"ds-cov-id\">DT-4.1</span><span>Identify a need and write a design brief<small class=\"ds-cov-as\">Assessed in Redesign folio</small></span><span class=\"ds-cov-cell\"><i class=\"ds-k ds-k-ok\"></i>Developed <small>2</small></span><span class=\"ds-cov-cell\"><i class=\"ds-k ds-k-ok\"></i>Developed <small>2</small></span><i class=\"ds-chev\"></i></summary><p class=\"ds-cov-mean\"><strong>Taught: Developed.</strong> Reached in full, and developed or consolidated in some lesson.</p><div class=\"ds-cov-line\"><b>02</b><span><a href=\"#\">Writing a design brief</a> <em class=\"ds-cov-warn\">Taught, links from today’s plan</em> <small>In full, introduced</small></span></div></details><details class=\"ds-cov-row\"><summary><span class=\"ds-cov-id\">DT-4.3</span><span>Model and test a solution</span><span class=\"ds-cov-cell ds-cov-note\"><i class=\"ds-k ds-k-part\"></i>Only in part <small>1</small></span><span class=\"ds-cov-cell ds-cov-come\"><i class=\"ds-k ds-k-come\"></i>Still to come</span><i class=\"ds-chev\"></i></summary></details><details class=\"ds-cov-row\"><summary><span class=\"ds-cov-id\">DT-4.5</span><span>Explain how a product affects its users</span><span class=\"ds-cov-cell ds-cov-warn\"><i class=\"ds-k ds-k-none\"></i>Not reached</span><span class=\"ds-cov-cell ds-cov-warn\"><i class=\"ds-k ds-k-none\"></i>Not reached</span><i class=\"ds-chev\"></i></summary></details></div>",
       "css": ".ds-cov { --house: #1e3bb3; --house-on: #fff; --house-soft: #e3e8fa; --house-deep: #142a85; font-family: Archivo, system-ui, sans-serif; color: #15171c; } .ds-cov-cols, .ds-cov-row summary { display: grid; grid-template-columns: 58px minmax(0, 1fr) 140px 140px 16px; gap: 4px 16px; align-items: baseline; } .ds-cov-cols { padding: 0 4px 6px; font-size: 12px; font-weight: 700; color: #5f636d; border-bottom: 2px solid #15171c; } .ds-cov-row { border-bottom: 1px solid #dcded6; } .ds-cov-row summary { padding: 12px 4px; cursor: pointer; list-style: none; font-size: 15px; transition: background-color 160ms; } .ds-cov-row summary::-webkit-details-marker { display: none; } .ds-cov-row summary:hover { background: color-mix(in oklab, var(--house-deep) 12%, #fcfcfa); } .ds-cov-row summary:focus-visible { outline: 2px solid var(--house-deep); outline-offset: -2px; } .ds-cov-id { font-size: 13px; font-weight: 800; color: var(--house-deep); } .ds-cov-cell { display: inline-flex; align-items: center; gap: 7px; font-size: 14px; font-weight: 650; } .ds-cov-cell small { font-size: 12px; font-weight: 600; color: #5f636d; } .ds-cov-come { color: var(--house-deep); } .ds-k { display: inline-block; width: 10px; height: 10px; } .ds-k-ok { background: var(--house-deep); } .ds-k-part { background: linear-gradient(135deg, #6e4b03 50%, transparent 50%); outline: 1px solid #6e4b03; outline-offset: -1px; } .ds-k-none { width: 9px; height: 9px; background: #8a1f10; transform: rotate(45deg); } .ds-k-come { background: #fcfcfa; outline: 2px dashed var(--house-deep); outline-offset: -2px; } .ds-cov-line { display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; align-items: baseline; padding: 2px 4px 14px 78px; font-size: 14px; } .ds-cov-line b { font-size: 24px; font-weight: 900; font-stretch: 70%; line-height: 0.85; color: var(--house-deep); } .ds-cov-line a { color: inherit; } .ds-cov-line small { font-size: 12px; color: #5f636d; } .ds-cov-line em { font-style: normal; font-size: 12px; font-weight: 650; } .ds-cov-warn { color: #8a1f10; } .ds-cov-note { color: #6e4b03; } .ds-cov-as { display: block; font-size: 12px; font-weight: 600; color: #5f636d; } .ds-cov-mean { margin: 0; padding: 2px 4px 6px 78px; font-size: 14px; color: #3a3d45; } .ds-cov-mean strong { color: #15171c; } .ds-chev { align-self: center; justify-self: end; width: 7px; height: 7px; border-right: 2px solid #5f636d; border-bottom: 2px solid #5f636d; transform: rotate(45deg); } .ds-cov-row[open] .ds-chev { transform: rotate(-135deg); }"
+    },
+    {
+      "name": "Assessment Notification",
+      "kind": "custom",
+      "refersTo": "rubric-mark-range",
+      "description": "The notification drawn in file order: section heads over a 2px ink rule, 20px part headings, criterion rows, outcome codes in a leading cell, and rubric tables with each mark range as a condensed figure in a 96px leading column.",
+      "html": "<div class=\"ds-doc\"><div class=\"ds-doc-h\"><h2>Marking criteria</h2></div><h3 class=\"ds-part\">Part 2: Ideas and prototype (15 marks, in class)</h3><p class=\"ds-coded\"><span>DT-4-2</span><span>generates and sketches a range of ideas</span></p><p class=\"ds-crit\"><strong>Prototype (10 marks)</strong></p><table class=\"ds-rubric\"><thead><tr><th>Marks</th><th>Criteria</th></tr></thead><tbody><tr><th>10-9</th><td>Builds a careful prototype, tests it against every criterion and records what to change.</td></tr><tr><th>8-6</th><td>Builds a prototype and tests it against most criteria.</td></tr><tr><th>5-3</th><td>Builds a prototype with some testing.</td></tr></tbody></table></div>",
+      "css": ".ds-doc { --house: #1e3bb3; --house-on: #fff; --house-soft: #e3e8fa; --house-deep: #142a85; font-family: Archivo, system-ui, sans-serif; color: #15171c; font-size: 15px; line-height: 1.55; } .ds-doc-h { padding-bottom: 10px; margin-bottom: 16px; border-bottom: 2px solid #15171c; } .ds-doc-h h2 { margin: 0; font-size: 22px; font-weight: 800; font-stretch: 80%; line-height: 1.05; letter-spacing: -0.015em; } .ds-part { margin: 0 0 8px; font-size: 20px; font-weight: 850; font-stretch: 90%; line-height: 1.05; } .ds-coded { display: grid; grid-template-columns: 82px minmax(0, 1fr); gap: 12px; margin: 0 0 6px; font-size: 14px; color: #3a3d45; } .ds-coded span:first-child { font-weight: 750; color: var(--house-deep); white-space: nowrap; } .ds-crit { margin: 14px 0 6px; font-size: 14px; color: #3a3d45; } .ds-rubric { width: 100%; border-collapse: collapse; font-size: 14px; margin: 12px 0 18px; } .ds-rubric thead th { text-align: left; font-size: 12px; font-weight: 700; color: #5f636d; padding: 0 10px 6px 0; border-bottom: 2px solid #15171c; } .ds-rubric thead th:first-child { width: 96px; } .ds-rubric tbody th, .ds-rubric td { text-align: left; vertical-align: top; padding: 9px 10px 9px 0; border-bottom: 1px solid #dcded6; line-height: 1.5; } .ds-rubric tbody th { padding-top: 6px; font-size: 34px; font-weight: 900; font-stretch: 70%; line-height: 1; color: var(--house); white-space: nowrap; font-variant-numeric: tabular-nums; } .ds-rubric tbody tr:first-child th { color: var(--house-deep); } @media (max-width: 640px) { .ds-rubric thead th:first-child { width: 76px; } .ds-rubric tbody th { font-size: 28px; } .ds-coded { grid-template-columns: 1fr; gap: 0; } }"
+    },
+    {
+      "name": "Details Figures",
+      "kind": "custom",
+      "refersTo": "detail-figure",
+      "description": "The notification's details in the house header: a label, a lead figure and a small rest line under a 55% house-on rule; a long lead is set smaller and the block widens.",
+      "html": "<div class=\"ds-facts\"><div><span>Due</span><b class=\"ds-wide\">Friday 12 June 2026</b><small>end of lesson</small></div><div><span>Weighting</span><b>30%</b><small>(20% in class, 10% at home)</small></div><div><span>Marks</span><b>40</b><small>(25 in class, 15 at home)</small></div></div>",
+      "css": ".ds-facts { --house: #1e3bb3; --house-on: #fff; --house-soft: #e3e8fa; --house-deep: #142a85; font-family: Archivo, system-ui, sans-serif; color: #15171c; display: flex; flex-wrap: wrap; padding: 4px 24px 22px; background: var(--house); color: var(--house-on); } .ds-facts > div { display: flex; flex-direction: column; gap: 4px; min-width: 120px; padding: 12px 28px 2px 0; margin-right: 28px; border-top: 2px solid color-mix(in oklab, var(--house-on) 55%, transparent); } .ds-facts span { font-size: 12px; font-weight: 650; opacity: 0.85; margin-bottom: 2px; } .ds-facts b { font-size: 40px; font-weight: 900; font-stretch: 70%; line-height: 0.9; letter-spacing: -0.02em; font-variant-numeric: tabular-nums; } .ds-facts b.ds-wide { font-size: 22px; font-weight: 800; font-stretch: 80%; line-height: 1.05; letter-spacing: -0.01em; } .ds-facts small { font-size: 13px; line-height: 1.35; opacity: 0.88; }"
+    },
+    {
+      "name": "Side Column",
+      "kind": "nav",
+      "refersTo": "side-column",
+      "description": "On this page with the current section on a 3px house rule, and the syllabus check as a status line; each block under a 2px ink rule.",
+      "html": "<aside class=\"ds-side\"><div class=\"ds-sb\"><p class=\"ds-sh\">On this page</p><ul><li><a href=\"#\">Task overview</a></li><li class=\"ds-here\"><a href=\"#\" aria-current=\"location\">What to submit</a></li><li><a href=\"#\">Marking criteria</a></li><li><a href=\"#\">Teacher notes</a></li></ul></div><div class=\"ds-sb\"><p class=\"ds-sh\">Syllabus check</p><a class=\"ds-st\" href=\"#\"><i></i><span><b>Matches</b> · 2 units, 4 topics</span></a></div></aside>",
+      "css": ".ds-side { --house: #1e3bb3; --house-on: #fff; --house-soft: #e3e8fa; --house-deep: #142a85; font-family: Archivo, system-ui, sans-serif; color: #15171c; width: 290px; } .ds-sb { padding-top: 10px; border-top: 2px solid #15171c; } .ds-sb + .ds-sb { margin-top: 26px; } .ds-sh { margin: 0 0 10px; font-size: 13px; font-weight: 800; } .ds-side ul { list-style: none; margin: 0; padding: 0; } .ds-side li a { display: block; padding: 4px 0 4px 12px; border-left: 2px solid #dcded6; font-size: 14px; color: #3a3d45; text-decoration: none; } .ds-side li a:hover { color: var(--house-deep); border-left-color: #b6b9af; } .ds-side li a:focus-visible { outline: 2px solid var(--house-deep); outline-offset: 2px; } .ds-side li.ds-here a { border-left: 3px solid var(--house); padding-left: 11px; font-weight: 800; color: var(--house-deep); } .ds-st { display: inline-flex; align-items: baseline; gap: 7px; font-size: 14px; font-weight: 500; color: #3a3d45; text-decoration: none; } .ds-st i { flex: none; width: 9px; height: 9px; border-radius: 50%; background: #0b7a55; transform: translateY(-1px); } .ds-st b { color: #0b7a55; font-weight: 800; } .ds-st:hover span { text-decoration: underline; text-underline-offset: 3px; }"
+    },
+    {
+      "name": "Assessable Topics and Teacher Notes",
+      "kind": "custom",
+      "refersTo": "topic-id",
+      "description": "Topics as a ruled list with syllabus ids in a 112px leading cell (unknown ids struck in warn-deep, No id muted, notes in note-deep), inside the teacher notes disclosure with its rotating chevron.",
+      "html": "<details class=\"ds-tn\" open><summary><span class=\"ds-chev\"></span>Teacher notes <small>Changes from last year · Assessable topics</small></summary><div class=\"ds-doc-h\"><h2>Assessable topics</h2><span class=\"ds-bad\"><i></i>1 to fix before the data repo’s checks pass</span></div><ul class=\"ds-topics\"><li><span class=\"ds-ids\"><span>DT-4.1</span></span><span>Write a design brief for a torch a younger student could use</span></li><li><span class=\"ds-ids\"><span>DT-4.7</span><span class=\"ds-unknown\">DT-4.9</span></span><span>Build a series circuit with a switch inside your casing</span></li><li><span class=\"ds-ids\"><span class=\"ds-none\">No id</span></span><span>Present your torch to the class<small class=\"ds-note\">Speaking is marked in the criteria, not linked to a dot point.</small></span></li></ul></details>",
+      "css": ".ds-tn { --house: #1e3bb3; --house-on: #fff; --house-soft: #e3e8fa; --house-deep: #142a85; font-family: Archivo, system-ui, sans-serif; color: #15171c; font-size: 15px; border-top: 2px solid #15171c; } .ds-tn summary { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; padding: 16px 0; cursor: pointer; font-size: 17px; font-weight: 800; list-style: none; } .ds-tn summary::-webkit-details-marker { display: none; } .ds-tn summary:hover, .ds-tn[open] summary { color: var(--house-deep); } .ds-tn summary small { font-size: 13px; font-weight: 500; color: #5f636d; } .ds-chev { width: 7px; height: 7px; border-right: 2px solid currentColor; border-bottom: 2px solid currentColor; transform: rotate(45deg); transition: transform 180ms cubic-bezier(0.22, 1, 0.36, 1); } .ds-tn[open] .ds-chev { transform: rotate(-135deg); } .ds-doc-h { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; padding-bottom: 10px; margin: 12px 0 16px; border-bottom: 2px solid #15171c; } .ds-doc-h h2 { margin: 0; font-size: 22px; font-weight: 800; font-stretch: 80%; } .ds-bad { display: inline-flex; align-items: center; gap: 7px; font-size: 13px; font-weight: 650; color: #8a1f10; } .ds-bad i { width: 9px; height: 9px; background: currentColor; transform: rotate(45deg); } .ds-topics { list-style: none; margin: 0; padding: 0; } .ds-topics li { display: grid; grid-template-columns: 112px minmax(0, 1fr); gap: 12px; padding: 7px 0; border-bottom: 1px solid #dcded6; } .ds-ids { display: flex; flex-direction: column; gap: 2px; padding-top: 2px; font-size: 13px; font-weight: 750; color: var(--house-deep); } .ds-unknown { color: #8a1f10; text-decoration: line-through; text-decoration-thickness: 2px; } .ds-none { font-weight: 600; color: #5f636d; } .ds-note { display: block; margin-top: 2px; font-size: 13px; color: #6e4b03; } @media (prefers-reduced-motion: reduce) { .ds-chev { transition: none; } }"
     }
   ],
   "narrative": {
@@ -204,13 +711,41 @@
       "The run sheet is drawn as a lane strip with a finish line at the lesson length."
     ],
     "rules": [
-      { "name": "The Colour Owns Regions Rule", "body": "A house colour fills whole fields: the rail band, the header, talk segments, the class band on home. It never shrinks to a pill, chip or badge.", "section": "colors" },
-      { "name": "The One House Per Page Rule", "body": "A page wears exactly one house, the class in the query string. The rail is the only place several houses appear together, and the jump dialog's row swatches are the only other exception.", "section": "colors" },
-      { "name": "The Stable House Rule", "body": "A class's house comes from its sorted offering path, never from a random or hashed value, and never from user choice until offerings can declare one.", "section": "colors" },
-      { "name": "The Scale Contrast Rule", "body": "Rank is made by jumping from a 34–112px condensed figure to a 13px label in the same row, not by colour blocks, boxes or caps. Labels stay small and sentence case.", "section": "typography" },
-      { "name": "The Leading Cell Rule", "body": "Identifiers (lesson number, start minute, term, syllabus id) sit in a fixed leading cell to the left of what they identify, set as a figure or bold label. Nothing sits above a heading as an eyebrow.", "section": "typography" },
-      { "name": "The Self-Hosted Rule", "body": "Archivo ships from `src/lib/assets/fonts/` under its OFL licence. The CSP forbids hosted fonts; never add a font CDN.", "section": "typography" },
-      { "name": "The Flat Field Rule", "body": "House colours are flat and unmodulated: no gradients, no shadows on bands or headers. The only patterned fill is the activity hatch.", "section": "elevation" }
+      {
+        "name": "The Colour Owns Regions Rule",
+        "body": "A house colour fills whole fields: the rail band, the header, talk segments, the class band on home. It never shrinks to a pill, chip or badge.",
+        "section": "colors"
+      },
+      {
+        "name": "The One House Per Page Rule",
+        "body": "A page wears exactly one house, the class in the query string. The rail is the only place several houses appear together, and the jump dialog's row swatches are the only other exception.",
+        "section": "colors"
+      },
+      {
+        "name": "The Stable House Rule",
+        "body": "A class's house is its offering's `colour` when fixed, otherwise its sorted offering path; never a random or hashed value. Fixing one class never moves another class off its own colour unless the two collide.",
+        "section": "colors"
+      },
+      {
+        "name": "The Scale Contrast Rule",
+        "body": "Rank is made by jumping from a 34–112px condensed figure to a 13px label in the same row, not by colour blocks, boxes or caps. Labels stay small and sentence case.",
+        "section": "typography"
+      },
+      {
+        "name": "The Leading Cell Rule",
+        "body": "Identifiers (lesson number, start minute, term, syllabus id) sit in a fixed leading cell to the left of what they identify, set as a figure or bold label. Nothing sits above a heading as an eyebrow.",
+        "section": "typography"
+      },
+      {
+        "name": "The Self-Hosted Rule",
+        "body": "Archivo ships from `src/lib/assets/fonts/` under its OFL licence. The CSP forbids hosted fonts; never add a font CDN.",
+        "section": "typography"
+      },
+      {
+        "name": "The Flat Field Rule",
+        "body": "House colours are flat and unmodulated: no gradients, no shadows on bands or headers. The only patterned fill is the activity hatch.",
+        "section": "elevation"
+      }
     ],
     "dos": [
       "Do give every class-scoped page `data-house` and read only `--house`, `--house-on`, `--house-soft` and `--house-deep` inside it.",
@@ -220,7 +755,10 @@
       "Do set figures in Archivo at 70–75% width and 900 weight, with tabular numerals.",
       "Do present feedback as paper entries topped with a 3px house rule.",
       "Do keep corners at 0 for fields and 2px for controls.",
-      "Do honour `prefers-reduced-motion`; every transition collapses to near zero."
+      "Do honour `prefers-reduced-motion`; every transition collapses to near zero.",
+      "Do draw an assessment notification in its own order, its parts only where it puts them.",
+      "Do put rubric mark ranges and outcome codes in a leading cell, as a Figure numeral and a bold house-deep label.",
+      "Do show the syllabus status beside the topics only when the check fails; elsewhere it stays a status line in the header and side column."
     ],
     "donts": [
       "Don't put eyebrow or kicker labels above headings; ids and terms go in leading cells.",
@@ -229,7 +767,9 @@
       "Don't shade house fields with gradients, glows or shadows; the activity hatch is the only pattern.",
       "Don't load fonts or any asset from a third-party host; the CSP allows only api.github.com.",
       "Don't round corners beyond 2px, except circular status dots.",
-      "Don't use uppercase tracking for labels; labels are small, sentence case and bold."
+      "Don't use uppercase tracking for labels; labels are small, sentence case and bold.",
+      "Don't add a marks bar, a parts list or a part summary panel to the assessment page; the owner retired them, and the notification's own Marking criteria is enough.",
+      "Don't render notification Markdown as HTML; parse it and draw each node as an element."
     ]
   }
 }

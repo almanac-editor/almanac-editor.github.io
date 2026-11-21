@@ -6,6 +6,7 @@
  */
 
 import type { Schema } from '@cfworker/json-schema';
+import { assessmentNames, assessmentPath, type AssessmentSpec } from './domain/assessments.ts';
 import {
 	classRecordPaths,
 	deliveryPath,
@@ -431,6 +432,22 @@ export class Data {
 			list.map(([p, o]) => [p, p === path ? doc : o] as [string, Offering])
 		);
 		return next;
+	}
+
+	/** A class's assessment specs, as file stems, from the listing alone. */
+	async assessments(offeringPath: string): Promise<string[]> {
+		return assessmentNames(offeringPath, (await this.store.paths()).keys());
+	}
+
+	/** One of a class's assessment specs, by file stem. */
+	assessment(offeringPath: string, name: string): Promise<Loaded<AssessmentSpec>> {
+		return this.store.readJson<AssessmentSpec>(assessmentPath(offeringPath, name));
+	}
+
+	/** A text file by its repo path, or null where it is not among the files Almanac reads. */
+	async text(path: string): Promise<string | null> {
+		if (!(await this.store.has(path))) return null;
+		return (await this.store.readText(path)).doc;
 	}
 
 	/** The school calendars, `calendar/<year>.json`, by path, each with its version. */
