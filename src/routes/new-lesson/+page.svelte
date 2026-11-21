@@ -39,6 +39,7 @@
 				data.store.paths(),
 				data.schemas()
 			]);
+			const registry = await data.registry(u, unit);
 			const lessons = await Promise.all(
 				(unit.lessons ?? []).map((ref) =>
 					data
@@ -54,7 +55,17 @@
 			const entry = offering?.units.find((e) => entryTakes(offering, e, u) && e.lessons);
 			const last = entry?.lessons?.at(-1) ?? unit.lessons?.at(-1);
 			const start = last && folders.includes(dirname(last)) ? dirname(last) : folders[0];
-			return { data, unit, paths, schemas, folders, own, start, minutes: usualLength(lessons) };
+			return {
+				data,
+				unit,
+				paths,
+				schemas,
+				registry,
+				folders,
+				own,
+				start,
+				minutes: usualLength(lessons)
+			};
 		})();
 	});
 
@@ -77,7 +88,7 @@
 	{#await load}
 		<PageHead title={null} />
 		<div class="page"><div class="loading"><span></span><span></span><span></span></div></div>
-	{:then { data, unit, paths, schemas, folders, own, start, minutes }}
+	{:then { data, unit, paths, schemas, registry, folders, own, start, minutes }}
 		{@const where = folder ?? start}
 		{@const ref = lessonFile(where, slug || '…')}
 		{@const taken = paths.has(join(u, ref))}
@@ -111,7 +122,7 @@
 					path={join(u, made.ref)}
 					lesson={made.lesson}
 					sha=""
-					registry={new Map((unit.syllabus_registry ?? []).map((r) => [r.id, r]))}
+					{registry}
 					{schemas}
 					store={data.store}
 					hasContent={false}

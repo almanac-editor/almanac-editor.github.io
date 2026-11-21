@@ -39,7 +39,7 @@ import {
 	unitDirs
 } from './domain/layout.ts';
 import type { MaterialDraft } from './domain/materials.ts';
-import { basename, join, normalise, stem } from './domain/paths.ts';
+import { basename, dirname, join, normalise, stem } from './domain/paths.ts';
 import { withColour } from './domain/offeringEdit.ts';
 import { withLesson } from './domain/newLesson.ts';
 import { isFresh, STARTER_SCHEMAS } from './domain/starter.ts';
@@ -47,7 +47,7 @@ import { offeringPath } from './domain/newOffering.ts';
 import { byNumber } from './house.ts';
 import { ConflictError, type Loaded } from './domain/repo.ts';
 import type { Store, Write } from './domain/store.ts';
-import type { Lesson, Offering, SchoolCalendar, Unit } from './domain/types.ts';
+import type { Lesson, Offering, RegistryEntry, SchoolCalendar, Unit } from './domain/types.ts';
 import type { OutcomeSet } from './domain/unitEdit.ts';
 import { describeProblems } from './domain/fieldNames.ts';
 import { Schemas, type Problem } from './domain/validate.ts';
@@ -89,6 +89,61 @@ export class Data {
 
 	async unit(dir: string): Promise<Unit> {
 		return (await this.store.readJson<Unit>(join(dir, 'unit.json'))).doc;
+	}
+
+	/**
+	 * Every dot point a unit's lessons can link, by id, as the renderers'
+	 * `load_unit` reads them: a revision unit's come from the units it
+	 * `revises`; any other unit's are its own, followed by those of the units
+	 * in `links_into` (Science's Working scientifically strand). Paths in both
+	 * are relative to the subject, the directory holding `outcome.json`.
+	 */
+	async registry(dir: string, unit?: Unit): Promise<Map<string, RegistryEntry>> {
+		unit ??= await this.unit(dir);
+		const revises = unit.revises ?? [];
+		const entries: RegistryEntry[] = revises.length ? [] : [...(unit.syllabus_registry ?? [])];
+		const others = [...revises, ...(unit.links_into ?? [])];
+		if (others.length) {
+			const subject = await this.subjectDir(dir);
+			const units = await Promise.all(
+				others.map((ref) => this.unit(join(subject, ref)).catch(() => null))
+			);
+			for (const other of units) entries.push(...(other?.syllabus_registry ?? []));
+		}
+		return new Map(entries.map((r) => [r.id, r]));
+	}
+
+	/** The directory a unit's `revises` and `links_into` paths are relative to: the one holding `outcome.json`. */
+	private async subjectDir(dir: string): Promise<string> {
+		const outcome = outcomePath(dir, await this.store.paths());
+		return outcome ? dirname(outcome) : dir;
+	}
+
+	/** The units a unit names in `links_into`, in order; a missing one is skipped. */
+	async linkedUnits(dir: string, unit?: Unit): Promise<UnitEntry[]> {
+		unit ??= await this.unit(dir);
+		if (!unit.links_into?.length) return [];
+		const subject = await this.subjectDir(dir);
+		const found = await Promise.all(
+			unit.links_into.map(async (ref) => {
+				const at = join(subject, ref);
+				const other = await this.unit(at).catch(() => null);
+				return other ? [{ dir: at, unit: other }] : [];
+			})
+		);
+		return found.flat();
+	}
+
+	/** The units whose `links_into` names this one: a strand's, such as Working scientifically. */
+	async linkingUnits(dir: string): Promise<UnitEntry[]> {
+		const target = normalise(dir);
+		const out: UnitEntry[] = [];
+		for (const entry of await this.units()) {
+			if (!entry.unit.links_into?.length) continue;
+			const subject = await this.subjectDir(entry.dir);
+			if (entry.unit.links_into.some((ref) => join(subject, ref) === target)) out.push(entry);
+		}
+		return out;
 	}
 
 	offerings(): Promise<[string, Offering][]> {

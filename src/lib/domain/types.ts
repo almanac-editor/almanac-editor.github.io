@@ -82,6 +82,10 @@ export interface Unit {
 	lessons?: string[];
 	/** Lessons agreed but not yet written, in teaching order, after those in `lessons`. */
 	planned?: PlannedLesson[];
+	/** A revision unit: the units it revises, relative to the subject. Its lessons link their registries. */
+	revises?: string[];
+	/** Units whose registries this unit's lessons also link, relative to the subject. */
+	links_into?: string[];
 	[key: string]: unknown;
 }
 
