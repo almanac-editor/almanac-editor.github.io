@@ -820,6 +820,15 @@ DT-4-7 builds and explains a series circuit
 ${torchSpec.topics.map((t) => `- ${t.text}`).join('\n')}
 `;
 
+/** A made-up school's logo, so the sample's notification shows where one goes. */
+const SAMPLE_LOGO = `<svg xmlns="http://www.w3.org/2000/svg" width="180" height="48" viewBox="0 0 180 48">
+<rect x="2" y="2" width="44" height="44" rx="6" fill="#1e3bb3"/>
+<path d="M24 10 L36 34 H12 Z" fill="#fff"/>
+<text x="56" y="22" font-family="Arial, sans-serif" font-size="15" font-weight="700" fill="#15171c">Sample</text>
+<text x="56" y="40" font-family="Arial, sans-serif" font-size="15" fill="#15171c">High School</text>
+</svg>
+`;
+
 const LESSON_SCHEMA = {
 	$schema: 'https://json-schema.org/draft/2020-12/schema',
 	type: 'object',
@@ -856,6 +865,7 @@ function files(): Map<string, string> {
 	for (const [path, doc] of Object.entries(deliveries)) put(path, doc);
 	put(`${SPEC_DIR}/torch_redesign.json`, torchSpec);
 	out.set(`${SPEC_DIR}/torch_redesign.md`, TORCH_NOTIFICATION);
+	out.set('assets/logo.svg', SAMPLE_LOGO);
 	for (const [path, doc] of Object.entries(calendars)) put(path, doc);
 	put('schemas/lesson.schema.json', LESSON_SCHEMA);
 	out.set(

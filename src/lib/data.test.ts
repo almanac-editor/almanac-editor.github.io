@@ -35,6 +35,11 @@ class MemoryStore implements Store {
 	async has(path: string) {
 		return this.files.has(path);
 	}
+	async readBase64(path: string): Promise<string> {
+		const text = this.files.get(path);
+		if (text === undefined) throw new NotFoundError(path);
+		return btoa(text);
+	}
 	async readText(path: string): Promise<Loaded<string>> {
 		const text = this.files.get(path);
 		if (text === undefined) throw new NotFoundError(path);
@@ -340,5 +345,16 @@ describe('Data.calendars and classDeliveries', () => {
 		await data.saveCalendar({ ...cal, terms: [] }, sha, 'Edit 2030 calendar');
 		expect(store.writes).toEqual(['calendar/2030.json', 'calendar/2030.json']);
 		await expect(data.saveCalendar(cal, null, 'again')).rejects.toBeInstanceOf(ConflictError);
+	});
+});
+
+describe('Data.logo', () => {
+	it('takes the first logo it finds, as a data URL', async () => {
+		const data = new Data(new MemoryStore(new Map([['assets/logo.svg', '<svg/>']])));
+		expect(await data.logo()).toBe(`data:image/svg+xml;base64,${btoa('<svg/>')}`);
+	});
+
+	it('is null where the files hold no logo', async () => {
+		expect(await new Data(new MemoryStore(new Map())).logo()).toBeNull();
 	});
 });

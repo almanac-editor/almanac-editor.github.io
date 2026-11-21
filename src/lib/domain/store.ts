@@ -41,6 +41,11 @@ export interface Store {
 	has(path: string): Promise<boolean>;
 	readText(path: string): Promise<Loaded<string>>;
 	readJson<T>(path: string): Promise<Loaded<T>>;
+	/**
+	 * A file's bytes as base64, for a file that is not text (the logo). It may
+	 * sit outside the folders `paths` lists; NotFoundError when it is missing.
+	 */
+	readBase64(path: string): Promise<string>;
 	/** Writes `doc` in the house format; returns the new version id. */
 	writeJson(path: string, doc: unknown, sha: string, message: string): Promise<string>;
 	/** Writes a new file; refuses with ConflictError if one is already there. */

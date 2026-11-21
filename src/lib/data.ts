@@ -40,6 +40,7 @@ import {
 	unitDirs
 } from './domain/layout.ts';
 import type { MaterialDraft } from './domain/materials.ts';
+import { LOGO_PATHS, logoUrl } from './domain/notificationPdf.ts';
 import { basename, dirname, join, normalise, stem } from './domain/paths.ts';
 import { withColour } from './domain/offeringEdit.ts';
 import { withLesson } from './domain/newLesson.ts';
@@ -73,6 +74,7 @@ export class Data {
 	private offeringsPromise: Promise<[string, Offering][]> | null = null;
 	private schemasPromise: Promise<Schemas> | null = null;
 	private calendarsPromise: Promise<Map<string, Loaded<SchoolCalendar>>> | null = null;
+	private logoPromise: Promise<string | null> | null = null;
 
 	constructor(readonly store: Store) {}
 
@@ -542,6 +544,21 @@ export class Data {
 			if (error instanceof NotFoundError) return null;
 			throw error;
 		}
+	}
+
+	/** The logo (`assets/logo.*`) as a `data:` URL, or null where the files hold none. */
+	logo(): Promise<string | null> {
+		this.logoPromise ??= (async () => {
+			for (const path of LOGO_PATHS) {
+				try {
+					return logoUrl(path, await this.store.readBase64(path));
+				} catch (error) {
+					if (!(error instanceof NotFoundError)) throw error;
+				}
+			}
+			return null;
+		})();
+		return this.logoPromise;
 	}
 
 	/** The school calendars, `calendar/<year>.json`, by path, each with its version. */

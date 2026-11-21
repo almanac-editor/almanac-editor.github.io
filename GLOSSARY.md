@@ -12,6 +12,7 @@ agree it with the project owner and add it here first.
 | **Criterion**   | A marked item inside a part, with its own marks and rubric: Part 2 has "Structured dataset (5 marks)" and "Summary statistics (10 marks)". A part with one rubric has one criterion. | sub-criterion, component |
 | **Mark range**  | One row of a rubric table: the marks ("10-9") and what earns them.                                                                                                                   | band, rubric band, level |
 | **Side column** | The narrow right-hand column beside the document: On this page and the syllabus check. On a phone it sits under the header.                                                          | margin                   |
+| **Logo**        | The school's image at `assets/logo.png` (or `.jpg`, `.jpeg`, `.svg`) in the lesson files, top left of every page of a printed notification.                                          | letterhead, crest        |
 
 ## Assessment edit page
 

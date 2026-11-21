@@ -52,6 +52,8 @@ src/lib/domain/   plain TypeScript, no Svelte, unit-tested
   assessmentEdit.ts a spec and its notification as one draft; both saved together;
                   marks, names and Where follow Marking criteria (syncMarks)
   notificationEdit.ts a notification as sections, details, and parts with criteria
+  notificationPdf.ts a notification laid out as students get it, for the PDF;
+                  the layout render_notification.py gives the Word file
   textBlocks.ts   a section's text as paragraphs, lists, tables: no Markdown on screen
   coverage.ts     a unit's dot points against its lessons: planned, and as taught
   schedule.ts     a class's calendar: term weeks, its periods, when each lesson falls
@@ -102,6 +104,10 @@ src/lib/components/, src/routes/   UI
   whose `gather_planned` is `agreedLessons`).
   The `DATA_REPO` parity tests compare them; keep them passing. Coverage as
   taught, from delivery records, has no Python counterpart.
+- **Notifications leave the app as PDFs, never Word files.** The notification
+  page (`/notification?o=&a=`) prints the issued half in the school's format,
+  so wording is fixed in the source, not in a document. The logo is read from
+  `assets/logo.*` in the teacher's files; the app ships none.
 - **Feedback lives on delivery records**
   (`offerings/<class>/taught/<lesson path>.json`), never on the lesson. Items
   are applied or declined, never deleted. Read a lesson's records on demand,

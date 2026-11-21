@@ -142,6 +142,16 @@ export class Repo implements Store {
 		return { doc: text, sha };
 	}
 
+	async readBase64(path: string): Promise<string> {
+		const sha = (await this.paths()).get(path);
+		if (!sha) throw new NotFoundError(`${path} is not in ${this.target.branch}.`);
+		const response = await this.request(`${this.base}/git/blobs/${sha}`);
+		const body: { content: string; encoding: string } = await response.json();
+		return body.encoding === 'base64'
+			? body.content.replace(/\s/g, '')
+			: encodeBase64(body.content);
+	}
+
 	async readJson<T = Json>(path: string): Promise<Loaded<T>> {
 		const { doc, sha } = await this.readText(path);
 		return { doc: JSON.parse(doc) as T, sha };
@@ -249,7 +259,10 @@ function encodePath(path: string): string {
 }
 
 export function encodeBase64(text: string): string {
-	const bytes = new TextEncoder().encode(text);
+	return bytesBase64(new TextEncoder().encode(text));
+}
+
+export function bytesBase64(bytes: Uint8Array): string {
 	let binary = '';
 	for (let i = 0; i < bytes.length; i += 0x8000) {
 		binary += String.fromCharCode(...bytes.subarray(i, i + 0x8000));

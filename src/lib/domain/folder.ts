@@ -3,8 +3,9 @@
  * System Access API (Chrome and Edge). A save writes the file and nothing
  * else: if the folder is a git clone, committing is the teacher's business.
  *
- * Only `subjects/`, `offerings/` and `schemas/` are listed, so a folder that
- * also holds decks, scripts or a `.git` directory is not walked in full. A
+ * Only the folders in `ROOTS` are listed, so a folder that also holds decks,
+ * scripts or a `.git` directory is not walked in full. The logo
+ * (`assets/logo.*`) is read by name, never listed. A
  * file's version id is a hash of its text, taken when it is read; a write
  * hashes the file again first and refuses if someone changed it meanwhile.
  *
@@ -13,13 +14,19 @@
  */
 
 import { dump } from './format.ts';
-import { ConflictError, NotFoundError, PartlySavedError, type Loaded } from './repo.ts';
+import {
+	bytesBase64,
+	ConflictError,
+	NotFoundError,
+	PartlySavedError,
+	type Loaded
+} from './repo.ts';
 import { contentOf, type Store, type Write } from './store.ts';
 
 export interface FolderFile {
 	kind: 'file';
 	name: string;
-	getFile(): Promise<{ text(): Promise<string> }>;
+	getFile(): Promise<{ text(): Promise<string>; arrayBuffer(): Promise<ArrayBuffer> }>;
 	createWritable(): Promise<{ write(data: string): Promise<void>; close(): Promise<void> }>;
 }
 
@@ -90,6 +97,11 @@ export class FolderStore implements Store {
 	async readText(path: string): Promise<Loaded<string>> {
 		const text = await (await (await this.file(path)).getFile()).text();
 		return { doc: text, sha: await digest(text) };
+	}
+
+	async readBase64(path: string): Promise<string> {
+		const file = await (await this.file(path)).getFile();
+		return bytesBase64(new Uint8Array(await file.arrayBuffer()));
 	}
 
 	async readJson<T>(path: string): Promise<Loaded<T>> {

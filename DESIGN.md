@@ -522,6 +522,10 @@ Everything after the notification's second `#` heading, folded at the foot of th
 
 Rows of rule-coloured bars (100%, 80%, 60%) with a slow linear shimmer, never a spinner; the header shows a translucent title-sized block.
 
+### Notification Page
+
+The notification as students get it, to save as a PDF from the browser's print dialog. The app's chrome stops at the page header (title "Notification", **Save as PDF** and **Edit**). Below it, the sheet is the school's own format, not House Colours: an A4 sheet of white paper with a soft shadow, Arial 11pt, a 3.2cm label column shaded #D9D9D9, 0.5pt #808080 hairlines, the title at 14pt with the words after its colon bold, and the logo (4.5cm) and the year and subject line (14pt bold, right) at the top of every page. The measures are `render_notification.py`'s, so the PDF and the Word file it replaces agree. The sheet ignores the dark theme. In print only the sheet shows, and the page has no margin, so the browser adds no URL or date; the table's repeating head and foot are the margins.
+
 ### Assessment Edit Page (signature)
 
 Editing an assessment is reading it. The page draws the notification as the assessment page does, section by section in file order, and the teacher opens one section at a time to change it. Nothing on the page looks like a form until it is open, and nothing open looks like the page.
