@@ -11,7 +11,7 @@
  */
 
 import { dump, type Json } from './format.ts';
-import type { Store, Write } from './store.ts';
+import { contentOf, type Store, type Write } from './store.ts';
 
 const API = 'https://api.github.com';
 
@@ -36,6 +36,16 @@ export class AuthError extends Error {}
 /** The file changed (on GitHub, or on disk) since it was loaded. */
 export class ConflictError extends Error {}
 export class NotFoundError extends Error {}
+/** Some files of a `writeMany` were written and the rest were not (a folder has no commits). */
+export class PartlySavedError extends Error {
+	constructor(
+		message: string,
+		readonly saved: string[],
+		readonly unsaved: string[]
+	) {
+		super(message);
+	}
+}
 export class GitHubError extends Error {
 	constructor(
 		message: string,
@@ -189,7 +199,7 @@ export class Repo implements Store {
 					path: f.path,
 					mode: '100644',
 					type: 'blob',
-					content: dump(f.doc)
+					content: contentOf(f)
 				}))
 			})
 		});

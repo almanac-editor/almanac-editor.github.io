@@ -11,14 +11,26 @@
  * since.
  */
 
+import { dump } from './format.ts';
 import type { Loaded } from './repo.ts';
 
-/** One file in a `writeMany`. */
-export interface Write {
+/** One file in a `writeMany`: JSON in the house format, or text written as it is. */
+export type Write = (
+	| { doc: unknown; text?: undefined }
+	| {
+			/** Written byte for byte, for a file that is not JSON (a notification). */
+			text: string;
+			doc?: undefined;
+	  }
+) & {
 	path: string;
-	doc: unknown;
 	/** The version the app loaded, or null for a file that must not exist yet. */
 	sha: string | null;
+};
+
+/** What a `Write` puts in the file. */
+export function contentOf(file: Write): string {
+	return file.text ?? dump(file.doc);
 }
 
 export interface Store {
@@ -36,7 +48,8 @@ export interface Store {
 	/**
 	 * Writes several files together. Every file is checked first, and
 	 * ConflictError means none was written. On GitHub they are one commit; in
-	 * a folder, which has no commits, they are written one after another.
+	 * a folder, which has no commits, they are written one after another, and
+	 * a write that fails after others succeeded throws PartlySavedError.
 	 */
 	writeMany(files: Write[], message: string): Promise<void>;
 	/** The commit the files are at, where they are in git through the store; else null. */

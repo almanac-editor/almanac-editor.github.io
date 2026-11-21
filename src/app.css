@@ -16,6 +16,9 @@
 :root {
 	--chalk: #f3f4f0;
 	--paper: #fcfcfa;
+	/* An editable field: its edge at rest (3:1 on paper) and its fill when in use. */
+	--field-edge: #7d8089;
+	--field-on: #ffffff;
 	--sunk: #e9eae4;
 	--ink: #15171c;
 	--ink-2: #3a3d45;
@@ -101,6 +104,8 @@
 	:root:not([data-theme='light']) {
 		--chalk: #121317;
 		--paper: #1a1c21;
+		--field-edge: #6b707b;
+		--field-on: #23262d;
 		--sunk: #0d0e11;
 		--ink: #ecede8;
 		--ink-2: #c7c9c2;
@@ -169,6 +174,8 @@
 :root[data-theme='dark'] {
 	--chalk: #121317;
 	--paper: #1a1c21;
+	--field-edge: #6b707b;
+	--field-on: #23262d;
 	--sunk: #0d0e11;
 	--ink: #ecede8;
 	--ink-2: #c7c9c2;
@@ -606,4 +613,40 @@ label {
 	body {
 		font-size: 16px;
 	}
+}
+
+/*
+ * An open editor: the one place a notification's text is being changed. It
+ * sits on paper with a house edge, and its fields are the app's own fields,
+ * as the lesson editor has them: a paper box with a label above, a darker
+ * edge on hover, and a house edge and ring while in use. Contenteditable
+ * text (`.rich`) wears the same box as an input.
+ */
+.editor {
+	background: var(--paper);
+	border: 2px solid var(--house);
+	border-radius: 2px;
+	box-shadow: var(--shadow);
+}
+
+.editor .rich {
+	padding: 8px 10px;
+	background: var(--paper);
+	border: 1px solid var(--rule-strong);
+	border-radius: 2px;
+	line-height: 1.45;
+	caret-color: var(--house);
+	transition:
+		border-color 160ms var(--ease),
+		box-shadow 160ms var(--ease);
+}
+
+.editor .rich:hover {
+	border-color: var(--ink-2);
+}
+
+.editor .rich:focus {
+	outline: none;
+	border-color: var(--house);
+	box-shadow: 0 0 0 3px color-mix(in oklab, var(--house) 22%, transparent);
 }

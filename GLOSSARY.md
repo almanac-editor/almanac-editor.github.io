@@ -13,6 +13,19 @@ agree it with the project owner and add it here first.
 | **Mark range**  | One row of a rubric table: the marks ("10-9") and what earns them.                                                                                                                   | band, rubric band, level |
 | **Side column** | The narrow right-hand column beside the document: On this page and the syllabus check. On a phone it sits under the header.                                                          | margin                   |
 
+## Assessment edit page
+
+Agreed with the owner on 2026-11-21.
+
+| Term                         | Means                                                                             | Not                   |
+| ---------------------------- | --------------------------------------------------------------------------------- | --------------------- |
+| **Where**                    | Where a part is done: at home, in class, or the teacher's own words.              | Done                  |
+| **Split into criteria**      | Turning a part's one rubric into several criteria, each with its own marks.       | separate criteria     |
+| **Small print**              | The text under a detail's figure: "(20% in class, 10% at home)".                  | note, rest            |
+| **Task number**              | The words before the title in the `## Assessment …` heading: "Assessment Task 1". | task label            |
+| **Phase**                    | A topic's phase, as the syllabus registry names it.                               | syllabus phase, stage |
+| **Students never see these** | What the teacher notes are: everything after the second `#` heading.              | never issued          |
+
 ## Proposed, not yet confirmed
 
 Terms already in the code. Confirm or correct them, then move them up.

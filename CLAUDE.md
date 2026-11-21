@@ -48,6 +48,11 @@ src/lib/domain/   plain TypeScript, no Svelte, unit-tested
   newUnit.ts      a new unit, and a new subject: where they go, what they hold
   unitEdit.ts     a unit's own fields and dot points; a subject's outcome.json
   tasks.ts        a unit's assessment tasks: which a class sat, and editing them
+  assessments.ts  a class's assessment specs, and the checks test_assessment_specs.py makes
+  assessmentEdit.ts a spec and its notification as one draft; both saved together;
+                  marks, names and Where follow Marking criteria (syncMarks)
+  notificationEdit.ts a notification as sections, details, and parts with criteria
+  textBlocks.ts   a section's text as paragraphs, lists, tables: no Markdown on screen
   coverage.ts     a unit's dot points against its lessons: planned, and as taught
   schedule.ts     a class's calendar: term weeks, its periods, when each lesson falls
   calendarEdit.ts the school calendar editor's draft (calendar/<year>.json)
@@ -59,6 +64,7 @@ src/lib/session.svelte.ts   token and target, or the sample repo
 src/lib/folderAccess.ts   choosing a folder, remembering it in IndexedDB
 src/lib/chooseFolder.ts   pick, check it holds lesson plans, open
 src/lib/house.ts  which house colour each class wears
+src/lib/undo.svelte.ts   one step of undo for a removal on the assessment edit page
 src/lib/demo.ts   made-up sample repo behind a fake fetch, for trying the app
 src/lib/components/, src/routes/   UI
 ```
@@ -73,7 +79,8 @@ src/lib/components/, src/routes/   UI
     it empty.
   - Check against a real clone with `DATA_REPO=../subject-almanac npm test`.
     Run it after any change to `format.ts`, `lessonEdit.ts`, `offeringEdit.ts`,
-    `offerings.ts`, `tasks.ts` or `deliveries.ts`.
+    `offerings.ts`, `tasks.ts`, `deliveries.ts`, `assessmentEdit.ts`, `notificationEdit.ts`
+    or `textBlocks.ts`.
   - Numbers are whole. A task's `weight` is a `number` in the schema, but
     Python writes `12.0` where JavaScript writes `12`, so the editor takes
     whole weights only.
