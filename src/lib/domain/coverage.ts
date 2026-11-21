@@ -40,6 +40,8 @@ export interface Source {
 	links: CurriculumLink[];
 	/** False for a taught lesson whose record kept no plan, so its links are the plan as it stands. */
 	planKept?: boolean;
+	/** The unit the lesson is in, where it is not the page's own: a strand reads other units' lessons. */
+	unit?: string;
 }
 
 /** One link to a dot point, and what made it. */
@@ -50,6 +52,8 @@ export interface Reach {
 	title: string;
 	assessment: boolean;
 	planKept: boolean;
+	/** The unit the lesson is in, where it is not the page's own. */
+	unit?: string;
 }
 
 export interface Gathered {
@@ -89,7 +93,8 @@ export function gather(registry: RegistryEntry[], sources: Source[], tasks: Task
 				ref: source.ref,
 				title: source.title,
 				assessment: false,
-				planKept: source.planKept ?? true
+				planKept: source.planKept ?? true,
+				...(source.unit ? { unit: source.unit } : {})
 			});
 		}
 	}
@@ -316,7 +321,8 @@ export interface Line {
  * lesson taught.
  */
 export function rowLines(row: CoverageRow, taughtRefs: ReadonlySet<string>): Line[] {
-	const of = (r: Reach) => r.ref ?? r.title;
+	// A strand's lessons come from several units, so two can share a file name.
+	const of = (r: Reach) => `${r.unit ?? ''}|${r.ref ?? r.title}`;
 	const taught = row.taught ?? [];
 	const plannedFrom = new Set(row.planned.map(of));
 	const shown = new Set<string>();
@@ -325,7 +331,12 @@ export function rowLines(row: CoverageRow, taughtRefs: ReadonlySet<string>): Lin
 		const from = of(reach);
 		const asTaught = taught.filter((r) => of(r) === from);
 		if (asTaught.length === 0) {
-			out.push({ reach, planned: true, taught: false, without: taughtRefs.has(from) });
+			out.push({
+				reach,
+				planned: true,
+				taught: false,
+				without: !reach.unit && taughtRefs.has(reach.ref ?? reach.title)
+			});
 		} else if (!shown.has(from)) {
 			for (const r of asTaught) out.push({ reach: r, planned: true, taught: true });
 		}
@@ -364,4 +375,78 @@ export function byPhase(rows: CoverageRow[]): { phase: string; rows: CoverageRow
 		else out.push({ phase, rows: [row] });
 	}
 	return out;
+}
+
+/**
+ * A unit's own rows, and the rows of each registry it links into with
+ * `links_into` (Science's Working scientifically strand). A linked row shows
+ * only where a lesson, a task or a planned lesson reaches it: the rest of the
+ * strand is no single unit's to cover, so it is never flagged here.
+ */
+export function splitLinked(
+	rows: CoverageRow[],
+	linked: { title: string; ids: ReadonlySet<string> }[]
+): { own: CoverageRow[]; linked: { title: string; rows: CoverageRow[]; total: number }[] } {
+	const elsewhere = new Set(linked.flatMap((l) => [...l.ids]));
+	const touched = (r: CoverageRow) =>
+		r.planned.length > 0 ||
+		(r.taught?.length ?? 0) > 0 ||
+		r.tasks.length > 0 ||
+		r.agreed.length > 0;
+	return {
+		own: rows.filter((r) => !elsewhere.has(r.entry.id)),
+		linked: linked.map(({ title, ids }) => ({
+			title,
+			rows: rows.filter((r) => ids.has(r.entry.id) && touched(r)),
+			total: ids.size
+		}))
+	};
+}
+
+/** A unit that links into a strand, with the lessons read for it. */
+export interface LinkingUnit {
+	dir: string;
+	unit: Unit;
+	lessons: { ref: string; lesson: Lesson | null }[];
+}
+
+/**
+ * A strand's sources: every lesson of the units that link into it, titled
+ * with its unit, and keeping only links to the strand's own ids. The other
+ * ids are the linking unit's business, so they are never dangling here.
+ */
+export function strandSources(units: LinkingUnit[], ids: ReadonlySet<string>): Source[] {
+	return units.flatMap(({ dir, unit, lessons }) =>
+		lessonSources(lessons).map((s) => ({
+			...s,
+			title: `${unit.unit_title}: ${s.title}`,
+			links: s.links.filter((l) => ids.has(l.id)),
+			unit: dir
+		}))
+	);
+}
+
+/** The linking units' tasks, titled with their unit, with only the strand's ids. */
+export function strandTasks(
+	units: { unit: Unit; tasks: Task[] }[],
+	ids: ReadonlySet<string>
+): Task[] {
+	return units.flatMap(({ unit, tasks }) =>
+		tasks.map((t) => ({
+			...t,
+			title: `${unit.unit_title}: ${t.title ?? 'assessment'}`,
+			curriculum_links: (t.curriculum_links ?? []).filter((l) => ids.has(l.id))
+		}))
+	);
+}
+
+/** The linking units' planned lessons that name a strand id, titled with their unit. */
+export function strandAgreed(units: Unit[], registry: RegistryEntry[]): Agreed {
+	const byId = new Map<string, string[]>([...registryById(registry).keys()].map((id) => [id, []]));
+	for (const unit of units) {
+		for (const item of unit.planned ?? []) {
+			for (const id of item.ids ?? []) byId.get(id)?.push(`${unit.unit_title}: ${item.title}`);
+		}
+	}
+	return { byId, dangling: [] };
 }
