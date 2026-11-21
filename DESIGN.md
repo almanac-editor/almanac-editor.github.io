@@ -4,6 +4,8 @@ description: House Colours. A browser editor for lessons-as-code where every cla
 colors:
   chalk: '#f3f4f0'
   paper: '#fcfcfa'
+  field-edge: '#7d8089'
+  field-on: '#ffffff'
   sunk: '#e9eae4'
   ink: '#15171c'
   ink-2: '#3a3d45'
@@ -243,6 +245,22 @@ components:
     width: '112px'
   topic-id-unknown:
     textColor: '{colors.warn-deep}'
+  editor-box:
+    backgroundColor: '{colors.paper}'
+    rounded: '{rounded.sm}'
+    padding: '16px 18px 14px'
+  band-field:
+    textColor: '{colors.house-on}'
+    rounded: '{rounded.sm}'
+    padding: '7px 10px'
+  save-bar:
+    backgroundColor: '{colors.paper}'
+    textColor: '{colors.ink}'
+    padding: '10px clamp(16px, 4vw, 48px)'
+  rubric-edit-mark-range:
+    textColor: '{colors.house-cobalt}'
+    typography: '{typography.figure}'
+    width: '84px'
 ---
 
 # Design System: Almanac Editor
@@ -288,7 +306,9 @@ Each house's **soft** tint is the hover ground for rows and tiles, the selected 
 
 - **Chalk** (chalk): the page ground under everything; also text on the ink button and the dark rail.
 - **Paper** (paper): raised surfaces on chalk: unit tiles, inputs, buttons, feedback entries, the lane track, panels.
-- **Sunk** (sunk): inline code ground and the hover on plain list rows.
+- **Field edge** (field-edge): the edge of anything the teacher can click to change on the edit page: the Edit button at rest, More menus, Where buttons, the dashed Add section button and the undo ghost. It clears 3:1 on paper, where rule-strong doesn't.
+- **Field on** (field-on): the fill of a field in use on a house band, white in light mode, so typed text reads as ink.
+- **Sunk** (sunk): inline code ground, the hover on plain list rows, the teacher notes' ground on the edit page and the undo ghost.
 - **Ink** (ink): body text, the 2px rule that heads every list, the finish line, the ink button and save bar.
 - **Ink 2** (ink-2): secondary text, field labels, input hover border.
 - **Muted** (muted): metadata, counts, tick labels, placeholders.
@@ -363,6 +383,7 @@ The assessment notification adds sizes the ramp lacks. Each sits under the close
 - **Home:** each class is a full-width house band: a 180–220px name tag on the left and its units as paper tiles (`auto-fill, minmax(240px, 1fr)`, 4px gaps) inside the band. Below 640px the tag stacks above the tiles.
 - **Gaps between colour fields** are tight (2–4px) so fields read as one striped surface; gaps between text blocks are generous.
 - **Assessment page:** the document column plus a sticky side column (about 290px, 48px gap, 24px from the top, scrolling on its own when taller than the window) on the right. Notification sections sit 44px apart and the teacher notes 48px below the last. Below 861px the side column moves under the header, above the document, with On this page collapsed. Below 640px the header's details become a two-column grid with a wide value spanning both.
+- **Assessment edit page:** the same read page, its document beside a 260px sticky side column (48px gap), with 120px of foot room above the save bar. Sections sit 40px apart; the add-section button 28px below the last. The teacher notes, 48px below, sit on their own sunk ground bled 18px each side. The open editor bleeds 18px each side of the text column (10px below 560px) so its text stays where it was read. Below 900px the side column moves above the document and On this page hides.
 
 ## Elevation & Depth
 
@@ -370,7 +391,8 @@ The world is flat. Separation comes from colour fields, the chalk/paper step and
 
 ### Shadow Vocabulary
 
-- **Panel** (`box-shadow: 0 1px 2px rgb(21 23 28 / 0.06), 0 6px 18px -6px rgb(21 23 28 / 0.14)`, token `--shadow`): the lane-strip panel at the top of a lesson, the editor's sticky save bar and its messages, the welcome sample card, the settings card.
+- **Panel** (`box-shadow: 0 1px 2px rgb(21 23 28 / 0.06), 0 6px 18px -6px rgb(21 23 28 / 0.14)`, token `--shadow`): the lane-strip panel at the top of a lesson, the editor's sticky save bar and its messages, the welcome sample card, the settings card, and on the assessment edit page the open section editor, the Escape prompt and the More menus.
+- **Save bar lift** (`box-shadow: 0 -6px 18px -10px rgb(21 23 28 / 0.25)`): the assessment edit page's save bar, cast upward because the bar sits at the foot of the window.
 - **Dialog** (`box-shadow: 0 2px 4px rgb(0 0 0 / 0.08), 0 24px 60px -12px rgb(0 0 0 / 0.35)`): the jump dialog only, over a 45% ink backdrop with a 2px blur.
 
 ### Named Rules
@@ -500,6 +522,70 @@ Everything after the notification's second `#` heading, folded at the foot of th
 
 Rows of rule-coloured bars (100%, 80%, 60%) with a slow linear shimmer, never a spinner; the header shows a translucent title-sized block.
 
+### Assessment Edit Page (signature)
+
+Editing an assessment is reading it. The page draws the notification as the assessment page does, section by section in file order, and the teacher opens one section at a time to change it. Nothing on the page looks like a form until it is open, and nothing open looks like the page.
+
+- **Closed section:** the section exactly as the assessment page draws it, under its Headline and 2px ink rule, with an **Edit** button at the right of the heading: paper, a 1px field-edge border, 13px/750 house deep. The whole section is the hit area: hover lays a 55% house-soft wash with a 40% house border (2px corners, bled 14px each side) and fills the Edit button with the house. A changed section says "Changed, not saved yet" beside its heading as a note-soft tag (13px/700 note deep); a section with marking problems shows the status line (a warn-deep diamond and the count) and the problems as one warn message.
+- **One open at a time.** Opening a section closes the last one with its changes kept. Escape in a changed section asks first (Escape Prompt); in an unchanged one it just closes.
+- **The parts table is made, never typed.** A Task overview table whose columns are Part, Marks and Where is generated from Marking criteria and drawn read-only: plain ink 2 text, 9px row padding, no field boxes, and a 13px muted line under it saying it is made from Marking criteria. The Marks detail reads the same way in the band: a 36px Figure numeral with "Worked out from Marking criteria" under it, never an input. A part heading in What to submit follows its part's name and marks while the part keeps the number it had when the file was opened, drawn as 18px/800 muted text with a line saying to change it in Marking criteria; otherwise it is flagged, never renamed.
+- **Add section:** a full-width 38px paper button with a dashed field-edge border and 14px/750 house-deep text, turning solid house on hover.
+
+### Open Editor
+
+The one place notification text is being changed: a paper box with a 2px house border, 2px corners and the Panel shadow, padded 16px 18px 14px and bled 18px into the gutter. Inside it, every field is the app's own field (Inputs / Fields): a paper box, 1px rule-strong edge, 8px 10px padding, ink 2 on hover, a house edge and 3px 22% house ring on focus, caret in the house. Contenteditable text (`.rich`) wears the same box at 1.45 line height, so a field never looks like the page around it.
+
+- **Heading:** "Section heading" label above a 22px/850 input.
+- **Format bar:** Bold and Italic as 32px buttons above the blocks; Ctrl/Cmd+B and +I do the same.
+- **Foot:** sticky 64px from the window's foot, so it stays in view above the save bar: a 40px/800 primary **Done**, Cancel, the hint "Done keeps your changes here. Save writes them." in 13px muted, then a More menu holding the rarer actions (Edit as plain text, Move section up or down, Remove section). A 1px 35% house rule separates it from the fields.
+- Text is formatted, never Markdown: bold, italic, code and links show as themselves. Markdown the editor can't place as blocks is shown as text in a 13px mono textarea with a note saying so.
+
+### Text Blocks
+
+A section's text inside the open editor, one block under the next 6px apart, each with a 13px/700 ink 2 label above ("Paragraph", "List", "Table").
+
+- **Paragraph:** a 15px field at 1.6 line height. **Sub-heading:** an 18px/800 field. **Quote:** italic, 14px inset with a 2px rule-strong line inside the field's left padding (a quote mark, not a stripe on a block).
+- **Lists:** each item its own field, square house-deep markers (decimal for numbered lists).
+- **Tables:** a grid of cell fields under a 2px ink rule, header cells at 800, 1px rule row dividers, 90px minimum cells, scrolling sideways in its own wrapper. A row's remove button shows on hover or focus (always below 560px).
+- **Tools only where you are:** a block's tools (add item, add row or column, remove) appear under it only while focus is inside it, as 30px quiet 13px/750 house-deep buttons; destructive ones in warn deep.
+- **Add:** an "Add" row under the last block behind a 1px dashed field-edge rule, offering Paragraph, Sub-heading, Bullet list and Table.
+- Enter adds the next paragraph, item or row; Backspace in an empty one removes it.
+
+### Criteria Editor (signature)
+
+Marking criteria edited in place as the rubric it is. Parts are ruled rows (1px rule, 18px over 14px padding).
+
+- **Part heading:** reads as the notification writes it, "Part N: name (marks)", at 22px/850, 72% width (18px below 560px): the name a field filling the row, the marks a 3.4em centred 900 tabular field inside a 15px/650 ink 2 bracket. A More menu sits at the end (Move part up or down, Split into criteria, Remove part).
+- **Where:** a row of 32px buttons, "At home" and "In class", paper with field-edge borders; the chosen one fills with the house (`aria-pressed`). A 9em field beside them, placeholder "Other", takes the teacher's own words.
+- **Rubric:** the assessment page's rubric with its cells as fields: a 2px ink head at 13px/800, each mark range in an 84px leading cell as a 30px Figure numeral in the house (the top range in house deep; 64px and 22px below 560px), what earns it as a text field beside it.
+- **Criteria:** a part split into criteria names each in a 15px/800 field above its own rubric; the part's marks are their sum.
+- **Fixes in place:** where a top mark range doesn't match the marks, or criteria don't sum to the part, a warn-soft strip (13px warn deep) states it with a paper button that fixes it.
+- A part that can't be read as parts is shown as text with a note, and saved exactly as it came.
+
+### Assessable Topics Editor
+
+The topics as ruled rows (1px rule): the topic's text and its syllabus ids in a right-hand cell (15px 900 condensed house deep, struck through in warn deep when unknown). Selecting a row grounds it in house soft with a house rule beneath and opens its fields: dot point, **Phase**, and a note. The dot point picker is a paper panel (1px rule-strong, max 340px, scrolling) with a find field, the registry's phases as 13px/800 house-deep heads, and each dot point as a row with its id in a 52px leading cell, hovering house soft. Units examined sit above as checkboxes.
+
+### Band Fields
+
+The title and details are edited in the house band, as the header that shows them. A field on the house is a light well at rest (14% house-on fill, 70% house-on edge, house-on text) and becomes a white field with ink text and a 3px house-on outline in use (field-on). Placeholders are examples, never values: italic, at 500, lighter than typed text. The title field is 30px/850 at 75% width; each detail is a 230px block topped with a 2px 55% house-on rule, with its name at 13px/800, its figure as a 22px/850 field, and "+ Small print" opening the line under it. A date detail opens the system date picker. The band's own Done is a 42px house-on button with house-deep text; Cancel and remove are transparent with 60% house-on edges. The band closes with a 4px 70% house-on rule along its foot.
+
+### Save Bar
+
+Sticky at the foot of the window: paper, a 2px house rule along its top, and the Save bar lift. In one row: the save state ("No changes", or "Changed: Task overview, Marking criteria" in bold), Undo when there's something to undo, then in warn deep "Saves with 2 marking problems to fix later", each count an underlined link to its section, then "Leave without saving" ("Back" when nothing changed) as a quiet button and **Save** (**Create** for a new task) as a 42px/800 primary carrying a `Ctrl S` key. Marks and syllabus problems never block a save; only what would write a file the data repo can't read does (no title, no units or topics, a part with no name, a bad file name for a new task), and the bar says so: "Can't save yet: …".
+
+### Undo Ghost
+
+A removal leaves a ghost where the thing was: a sunk strip with a 1px dashed field-edge border, "Removed the table" in 14px ink 2 and an 800 house-deep Undo button. One step of undo only; the save bar offers the same Undo until the next removal, a Cancel or a save. Nothing shifts to make room for it.
+
+### Escape Prompt
+
+Asked in the page, never in a browser dialog: a 460px paper panel fixed 88px above the window's foot, centred, with a 2px house border and the Panel shadow. An 18px heading, a 14px ink 2 line, and two choices: **Keep my changes** (primary) and **Undo my changes** (warn deep text and border). The leave prompt takes the same form.
+
+### More Menus
+
+Rarer actions live behind a "More" summary: a 32–36px paper button with a field-edge border and a chevron. The menu is a paper panel (1px field-edge, 6px padding, 200–220px wide, Panel shadow) of left-aligned quiet buttons, destructive ones last in warn deep. It opens upward from an editor's foot and downward from a part heading.
+
 ## Do's and Don'ts
 
 ### Do:
@@ -515,6 +601,11 @@ Rows of rule-coloured bars (100%, 80%, 60%) with a slow linear shimmer, never a 
 - **Do** draw an assessment notification in its own order, its parts only where it puts them.
 - **Do** put rubric mark ranges and outcome codes in a leading cell, as a Figure numeral and a bold house-deep label.
 - **Do** show the syllabus status beside the topics only when the check fails; elsewhere it stays a status line in the header and side column.
+- **Do** let the edit page read like the page it edits; a field appears only in the one open section or band.
+- **Do** make every field on the edit page the app's own field (paper box, rule-strong edge, house focus ring), the same as the lesson editor's.
+- **Do** draw anything generated (the parts table, marks from the parts) as plain read-only text, never as a disabled field.
+- **Do** keep each block's tools hidden until focus is in it, and put rare actions behind More.
+- **Do** ask in the page, with two named choices, before discarding changes.
 
 ### Don't:
 
@@ -527,3 +618,7 @@ Rows of rule-coloured bars (100%, 80%, 60%) with a slow linear shimmer, never a 
 - **Don't** use uppercase tracking for labels; labels are small, sentence case and bold.
 - **Don't** add a marks bar, a parts list or a part summary panel to the assessment page; the owner retired them, and the notification's own Marking criteria is enough.
 - **Don't** render notification Markdown as HTML; parse it and draw each node as an element.
+- **Don't** show Markdown marks to the teacher while editing; text is formatted in place.
+- **Don't** make an editable field look like the text around it, or a read-only value look like a field.
+- **Don't** use browser `confirm`, `alert` or `prompt` dialogs on the edit page.
+- **Don't** block a save on a marks or syllabus problem; say what's wrong and save anyway.
