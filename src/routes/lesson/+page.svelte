@@ -51,7 +51,7 @@
 			} catch (error) {
 				if (!(error instanceof OfferingMismatch)) throw error;
 			}
-			const registry = new Map((unit.syllabus_registry ?? []).map((r) => [r.id, r]));
+			const registry = await data.registry(u, unit);
 			// Warm the neighbours so the next and previous lessons open at once.
 			const at = refs.indexOf(l);
 			for (const ref of [refs[at + 1], refs[at - 1]]) {

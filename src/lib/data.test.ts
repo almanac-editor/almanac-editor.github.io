@@ -248,6 +248,49 @@ describe('Data.oneOffs', () => {
 	});
 });
 
+describe('Data.registry', () => {
+	const point = (id: string) => ({ id, framework: 'NESA', phase: 'P', text: `Text of ${id}` });
+	const ids = (registry: Map<string, unknown>) => [...registry.keys()];
+
+	function subject(topic: Unit) {
+		const { store, data } = setup(false);
+		store.files.set('subjects/sorting/outcome.json', '{}');
+		store.files.set(`${UNIT}/unit.json`, dump(topic));
+		store.files.set(
+			'subjects/sorting/units/strand/unit.json',
+			dump({ unit_title: 'Strand', syllabus_registry: [point('ST-1'), point('ST-2')] })
+		);
+		return data;
+	}
+
+	it('follows the unit’s own points with those of the units in links_into', async () => {
+		const data = subject({
+			...unit,
+			syllabus_registry: [point('SO-1')],
+			links_into: ['units/strand']
+		});
+		expect(ids(await data.registry(UNIT))).toEqual(['SO-1', 'ST-1', 'ST-2']);
+	});
+
+	it('gives a revision unit the points of the units it revises', async () => {
+		const data = subject({ unit_title: 'Revision', revises: ['units/strand'] });
+		expect(ids(await data.registry(UNIT))).toEqual(['ST-1', 'ST-2']);
+	});
+
+	it('is the unit’s own points where it names no other unit', async () => {
+		const data = subject({ ...unit, syllabus_registry: [point('SO-1')] });
+		expect(ids(await data.registry(UNIT))).toEqual(['SO-1']);
+	});
+
+	it('finds the units on both ends of a links_into', async () => {
+		const data = subject({ ...unit, links_into: ['units/strand'] });
+		const strand = 'subjects/sorting/units/strand';
+		expect((await data.linkedUnits(UNIT)).map((x) => x.dir)).toEqual([strand]);
+		expect((await data.linkingUnits(strand)).map((x) => x.dir)).toEqual([UNIT]);
+		expect(await data.linkingUnits(UNIT)).toEqual([]);
+	});
+});
+
 describe('Data.calendars and classDeliveries', () => {
 	const cal = { year: 2030, periods: [{ id: 'P1' }], terms: [] };
 	const record = (lesson: string) =>
