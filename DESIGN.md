@@ -449,6 +449,16 @@ The run sheet drawn as a carnival lane: a 64px track on paper between two rule-s
 - **Compact:** a 12px strip with no labels or ticks, used in the unit's lesson lanes.
 - Segments and the finish line slide (380ms) as timings are edited. A legend (talk, activity, stretch, finish) sits above the unit lanes.
 
+### Search Page
+
+Finding where a topic was taught, or will be. The header names the place searched in its lede, and tabs hanging from it (as the unit views) widen or narrow it: the unit, the unit in a class's order, the class's year, all of the subject, every subject. The query carries across the tabs.
+
+- **Field:** one wide search field at the top of the page, capped at the prose measure: paper, 1px rule-strong edge, a 20px muted search icon, 18px/600 text; the house edge and 3px ring on focus. It searches as the teacher types; the URL follows without adding history.
+- **Count line:** 14px ink 2 under the field: "“galileo” comes up in 2 lessons of 26", or how many plans were read before anything is typed.
+- **Results:** a ruled list, each row led by the lesson number as a 40px Figure in the house (blank for a lesson not written yet, whose title reads in ink 2). Then the title as a Title link, and straight after it the status in 12px/700: "Taught 3 Mar 2026" in house deep, "Planned for 12 Mar" in muted, "Planned for …, not marked taught" in warn deep, "Planned, not written yet" in muted. Past one unit, the unit's name sits under the title in 13px muted.
+- **Places:** under the title, each place a word appears: where it is in 12px/700 ink 2 ("Run sheet · Retrieval", "Content file today · Opening"), then the text around it in 14px, the words marked on house soft in house deep at 750. Four places show; "3 more places" in 13px/750 house deep opens the rest.
+- **Reading:** while plans are read, "Reading plans: 12 of 26" in 13px muted over the loading bars.
+
 ### Class Calendar
 
 A class's year on a month grid (`@event-calendar/core`, restyled through its `--ec-*` variables), under a 2px ink rule, weekdays only, weeks starting Monday.

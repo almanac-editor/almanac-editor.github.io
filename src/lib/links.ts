@@ -42,6 +42,18 @@ export const links = {
 	/** A year's school calendar: terms, periods and days off. */
 	calendarEdit: (y: number | string, o?: string | null) =>
 		resolve('/calendar-edit') + query({ y: String(y), o }),
+	/**
+	 * Searching plans' text. The place searched is one unit (`u`, with `o` and
+	 * `t` for a class's order and dates), one class's year (`o` alone), a
+	 * subject (`s`), or every plan (none of them).
+	 */
+	search: (where: {
+		q?: string | null;
+		u?: string | null;
+		o?: string | null;
+		t?: string | null;
+		s?: string | null;
+	}) => resolve('/search') + query({ q: where.q, u: where.u, o: where.o, t: where.t, s: where.s }),
 	lesson: (u: string, l: string, o?: string | null, t?: string | null, edit = false) =>
 		resolve('/lesson') + query({ u, l, o, t, edit: edit ? '1' : null })
 };

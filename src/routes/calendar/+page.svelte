@@ -229,6 +229,7 @@
 			lede="Lessons on the days they were taught, and the rest on the class’s next free periods."
 		>
 			{#snippet actions()}
+				<a class="btn" href={links.search({ o })}><Icon name="search" size={16} /> Search</a>
 				<a class="btn" href={links.editClass(o)}><Icon name="pencil" size={16} /> Edit class</a>
 				<a class="btn" href={links.calendarEdit(offering.year, o)}>
 					<Icon name="calendar" size={16} /> School calendar

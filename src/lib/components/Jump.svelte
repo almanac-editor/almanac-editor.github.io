@@ -2,7 +2,7 @@
 	import type { House } from '#lib/house.ts';
 
 	export interface JumpItem {
-		kind: 'Class' | 'Calendar' | 'Unit' | 'Lesson';
+		kind: 'Class' | 'Calendar' | 'Unit' | 'Lesson' | 'Search';
 		label: string;
 		sub: string;
 		href: string;
@@ -14,6 +14,7 @@
 	// Jump to any class, unit or lesson by typing part of its name. Opens with
 	// "/" or Ctrl+K from anywhere that is not a text field.
 	import { goto } from '$app/navigation';
+	import { links } from '#lib/links.ts';
 	import Icon from './Icon.svelte';
 
 	let { items }: { items: JumpItem[] } = $props();
@@ -31,7 +32,18 @@
 					return words.every((w) => hay.includes(w));
 				})
 			: items.filter((item) => item.kind !== 'Lesson');
-		return found.slice(0, 40);
+		const out = found.slice(0, 40);
+		// Last, so Enter still opens a name that matches: search every plan's text instead.
+		if (words.length) {
+			out.push({
+				kind: 'Search',
+				label: `Search plan text for “${query.trim()}”`,
+				sub: 'Every subject',
+				href: links.search({ q: query.trim() }),
+				house: 'none'
+			});
+		}
+		return out;
 	});
 
 	export function open() {

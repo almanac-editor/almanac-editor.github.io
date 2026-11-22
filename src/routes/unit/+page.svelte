@@ -181,6 +181,9 @@
 				<a class="btn" href={links.coverage(u, o, t)}>
 					<Icon name="check" size={16} /> Coverage
 				</a>
+				<a class="btn" href={links.search({ u, o, t })}>
+					<Icon name="search" size={16} /> Search
+				</a>
 				<a class="btn" href={links.unitEdit(u, o, t)} title="Edit unit (E)">
 					<Icon name="pencil" size={16} /> Edit unit
 				</a>

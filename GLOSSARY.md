@@ -36,6 +36,8 @@ Terms already in the code. Confirm or correct them, then move them up.
 | **Notification**    | The task's Markdown file as students get it (`<offering>/assessments/<name>.md`).                                                                                    |
 | **Assessment spec** | The task's JSON beside the notification: offering, units, and the assessable topics with their syllabus ids.                                                         |
 | **Teacher notes**   | Everything after the notification's second `#` heading. Never shown to students; collapsed at the page foot. In an assignment it holds the Assessable topics.        |
+| **Search**          | Finding words in plans' text, on the search page: a unit, a class's year, a subject, or every plan.                                                                  |
+| **Place**           | Where in a plan a searched word appears, as "Run sheet · Retrieval" or "Content file today · Opening".                                                               |
 | **Syllabus check**  | Whether the spec's topics match the notification's Assessable topics list (in the body for an exam, in the teacher notes for an assignment) and the unit registries. |
 
 ## Retired
