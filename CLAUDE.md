@@ -56,6 +56,7 @@ src/lib/domain/   plain TypeScript, no Svelte, unit-tested
                   the layout render_notification.py gives the Word file
   textBlocks.ts   a section's text as paragraphs, lists, tables: no Markdown on screen
   coverage.ts     a unit's dot points against its lessons: planned, and as taught
+  search.ts       finding words in plans: each place a word appears, marked
   schedule.ts     a class's calendar: term weeks, its periods, when each lesson falls
   calendarEdit.ts the school calendar editor's draft (calendar/<year>.json)
   layout.ts       where units, offerings, calendars, schemas and content files are
@@ -66,6 +67,7 @@ src/lib/session.svelte.ts   token and target, or the sample repo
 src/lib/folderAccess.ts   choosing a folder, remembering it in IndexedDB
 src/lib/chooseFolder.ts   pick, check it holds lesson plans, open
 src/lib/house.ts  which house colour each class wears
+src/lib/searchScope.ts   the plans a search reads: a unit, a class's year, a subject
 src/lib/undo.svelte.ts   one step of undo for a removal on the assessment edit page
 src/lib/demo.ts   made-up sample repo behind a fake fetch, for trying the app
 src/lib/components/, src/routes/   UI
@@ -112,9 +114,17 @@ src/lib/components/, src/routes/   UI
   (`offerings/<class>/taught/<lesson path>.json`), never on the lesson. Items
   are applied or declined, never deleted. Read a lesson's records on demand,
   never every record on every page. The one exception is a class's calendar
-  page, which reads that one class's records (`Data.classDeliveries`). A
+  page, which reads that one class's records (`Data.classDeliveries`), as
+  does the search page when it searches a class. A
   unit's coverage page reads one class's records for that unit only
   (`Data.unitDeliveries`).
+- **Search reads on demand.** The search page reads the plans of the place
+  searched once, when it opens, a few at a time (`mapLimit`), then searches
+  them in memory on each keystroke. Nothing is indexed or saved. A folder is
+  read fresh each time, so it finds plans as another program left them; on
+  GitHub, files already read come from the blob cache. Most teachers use a
+  folder, so keep it fast there first. In a class, a taught lesson is
+  searched in the plan its delivery record kept, with today's content file.
 - **Planned dates are worked out, never saved.** The school calendar
   (`calendar/<year>.json`: periods, terms, days off) and an offering's
   `timetable` give a class its periods; `schedule.ts` puts taught lessons on
