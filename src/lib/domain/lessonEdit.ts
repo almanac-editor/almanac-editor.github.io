@@ -11,7 +11,7 @@
  *   empty, so saving an untouched draft gives back the same bytes.
  * - Blank entries in string lists are dropped.
  * - What the editor never changes is copied through: `materials`, a curriculum
- *   link's framework, id, coverage and mode, a resource's url, canvas and file,
+ *   link's framework, id, coverage and mode, a resource's url, canvas, file and shared,
  *   and any key the editor does not know.
  * - A reference is edited whole: its citation, its link or file, and what it
  *   is used for. It has a link or a file, never both, and is refused with
@@ -83,7 +83,7 @@ export const LESSON_ORDER = [
 ];
 const SECTION_ORDER = ['label', 'section', 'duration_minutes', 'kind', 'tier'];
 const LINK_ORDER = ['framework', 'id', 'coverage', 'mode', 'note'];
-const RESOURCE_ORDER = ['name', 'url', 'canvas', 'file', 'notes'];
+const RESOURCE_ORDER = ['name', 'url', 'canvas', 'file', 'shared', 'notes'];
 const REFERENCE_ORDER = ['citation', 'url', 'path', 'used_for'];
 const ASSESSMENT_ORDER = ['formative', 'evidence'];
 

@@ -8,7 +8,7 @@ import { decodeBase64, encodeBase64 } from './repo.ts';
 import type { Offering, Unit } from './types.ts';
 import { Schemas, toPath } from './validate.ts';
 import { describeProblems, fieldName } from './fieldNames.ts';
-import { citationParts, linkHost } from './lessonView.ts';
+import { citationParts, linkHost, quotePath, sharedPlace } from './lessonView.ts';
 
 const fixture = <T>(name: string): T =>
 	JSON.parse(readFileSync(new URL(`./fixtures/${name}`, import.meta.url), 'utf-8'));
@@ -229,5 +229,47 @@ describe('linkHost', () => {
 	it('refuses anything that is not a web address', () => {
 		expect(linkHost('javascript:alert(1)')).toBeNull();
 		expect(linkHost('example.com/a')).toBeNull();
+	});
+});
+
+describe('sharedPlace', () => {
+	const folder =
+		'https://school-my.sharepoint.com/personal/t/Documents/Stage%204/Observing%20The%20Universe';
+
+	it('links the file under the folder, encoding each segment', () => {
+		expect(sharedPlace('resources/Science Observation Activity.docx', folder)).toEqual({
+			kind: 'link',
+			url: folder + '/resources/Science%20Observation%20Activity.docx'
+		});
+	});
+
+	it('does not double the slash after a folder that ends in one', () => {
+		expect(sharedPlace('a.pdf', 'https://x.example/f/')).toEqual({
+			kind: 'link',
+			url: 'https://x.example/f/a.pdf'
+		});
+	});
+
+	it('calls a path without an extension missing, folder or not', () => {
+		expect(sharedPlace('resources/Common Laboratory Equipment worksheet', folder)).toEqual({
+			kind: 'missing'
+		});
+		expect(sharedPlace('resources/notes.', folder)).toEqual({ kind: 'missing' });
+		expect(sharedPlace('resources/.hidden', undefined)).toEqual({ kind: 'missing' });
+		expect(sharedPlace('v1.2/sheet', folder)).toEqual({ kind: 'missing' });
+	});
+
+	it('shows the path as text when the unit has no web address for its folder', () => {
+		expect(sharedPlace('resources/a.docx', undefined)).toEqual({ kind: 'text' });
+		expect(sharedPlace('resources/a.docx', 'javascript:alert(1)')).toEqual({ kind: 'text' });
+	});
+});
+
+describe('quotePath', () => {
+	it("matches Python's quote(path, safe='/')", () => {
+		// quote("a b/c&d (1)!'*~_.-é#?%/x+y=z", safe="/")
+		expect(quotePath("a b/c&d (1)!'*~_.-é#?%/x+y=z")).toBe(
+			'a%20b/c%26d%20%281%29%21%27%2A~_.-%C3%A9%23%3F%25/x%2By%3Dz'
+		);
 	});
 });

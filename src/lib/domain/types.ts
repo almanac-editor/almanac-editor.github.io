@@ -36,6 +36,8 @@ export interface Resource {
 	url?: string;
 	canvas?: string;
 	file?: string;
+	/** A path inside the unit's `shared_folder`; no extension means not found yet. */
+	shared?: string;
 	notes?: string;
 }
 
@@ -86,7 +88,16 @@ export interface Unit {
 	revises?: string[];
 	/** Units whose registries this unit's lessons also link, relative to the subject. */
 	links_into?: string[];
+	/** The cloud folder holding the files its lessons' resources name with `shared`. */
+	shared_folder?: SharedFolder;
 	[key: string]: unknown;
+}
+
+export interface SharedFolder {
+	/** Relative to the subject's shared root on each machine; only the data repo's script reads it. */
+	path: string;
+	/** The folder's own web address, not a sharing link. */
+	url?: string;
 }
 
 /** One entry in a unit's `planned`: a lesson agreed before its plan exists. */

@@ -74,3 +74,39 @@ export function linkHost(url: string): string | null {
 		return null;
 	}
 }
+
+/**
+ * Where a resource's `shared` file is, given its unit's `shared_folder.url`:
+ * - `link`: the file's web address, the folder's address, `/`, then the path
+ *   percent-encoded segment by segment, as `scripts/shared_resources.py` makes
+ *   it with Python's `quote(path, safe="/")`.
+ * - `missing`: the path has no extension, so the file is known but not found yet.
+ * - `text`: the unit has no usable folder address; show the path as it is.
+ */
+export type SharedPlace = { kind: 'link'; url: string } | { kind: 'missing' } | { kind: 'text' };
+
+export function sharedPlace(shared: string, folderUrl: string | undefined): SharedPlace {
+	if (!hasSuffix(shared)) return { kind: 'missing' };
+	if (!folderUrl || linkHost(folderUrl) === null) return { kind: 'text' };
+	return { kind: 'link', url: folderUrl.replace(/\/+$/, '') + '/' + quotePath(shared) };
+}
+
+/** Python's `Path(p).suffix` is not empty: the last part has a dot that neither starts nor ends it. */
+function hasSuffix(path: string): boolean {
+	const name = path.replace(/\/+$/, '').split('/').pop() ?? '';
+	const dot = name.lastIndexOf('.');
+	return dot > 0 && dot < name.length - 1;
+}
+
+/** Python's `quote(path, safe="/")`: everything but letters, digits, `_.-~` and `/` is encoded. */
+export function quotePath(path: string): string {
+	return path
+		.split('/')
+		.map((part) =>
+			encodeURIComponent(part).replace(
+				/[!'()*]/g,
+				(c) => '%' + c.charCodeAt(0).toString(16).toUpperCase()
+			)
+		)
+		.join('/');
+}
