@@ -221,6 +221,11 @@
 				<a class="btn" href={links.assessmentEdit(o, a)}>
 					<Icon name="pencil" size={16} /> Edit
 				</a>
+				{#if notification}
+					<a class="btn" href={links.notification(o, a)}>
+						<Icon name="file" size={16} /> PDF
+					</a>
+				{/if}
 				{#if github}
 					<a class="btn" href={github(spec.notification)} target="_blank" rel="noopener noreferrer">
 						<Icon name="link" size={16} /> Notification on GitHub

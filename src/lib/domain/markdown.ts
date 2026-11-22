@@ -16,7 +16,7 @@ export type Inline =
 export type Block =
 	| { kind: 'heading'; level: number; text: string; inline: Inline[] }
 	| { kind: 'paragraph'; inline: Inline[] }
-	| { kind: 'list'; ordered: boolean; items: Block[][] }
+	| { kind: 'list'; ordered: boolean; start: number; items: Block[][] }
 	| { kind: 'table'; head: Inline[][] | null; rows: Inline[][][] }
 	| { kind: 'quote'; blocks: Block[] }
 	| { kind: 'rule' };
@@ -46,6 +46,11 @@ export function parseInline(source: string): Inline[] {
 		if ((m = rest.match(/^`([^`]+)`/))) {
 			flush();
 			out.push({ kind: 'code', text: m[1] });
+		} else if ((m = rest.match(/^\\([!-/:-@[-`{-~])/))) {
+			// A backslash escape: the character itself, as CommonMark reads it.
+			text += m[1];
+			i += 2;
+			continue;
 		} else if ((m = rest.match(/^(\*\*|__)(?=\S)([\s\S]*?\S)\1/))) {
 			flush();
 			out.push({ kind: 'strong', children: parseInline(m[2]) });
@@ -127,6 +132,7 @@ function parseLines(lines: string[]): Block[] {
 			blocks.push({ kind: 'quote', blocks: parseLines(quoted) });
 		} else if (BULLET.test(line) || NUMBER.test(line)) {
 			const ordered = !BULLET.test(line);
+			const start = ordered ? Number(line.match(NUMBER)?.[2] ?? 1) : 1;
 			const base = indentOf(line);
 			const items: string[][] = [];
 			while (i < lines.length) {
@@ -143,7 +149,12 @@ function parseLines(lines: string[]): Block[] {
 				}
 				i += 1;
 			}
-			blocks.push({ kind: 'list', ordered, items: items.map((item) => parseLines(item)) });
+			blocks.push({
+				kind: 'list',
+				ordered,
+				start,
+				items: items.map((item) => parseLines(item))
+			});
 		} else {
 			const para: string[] = [];
 			while (

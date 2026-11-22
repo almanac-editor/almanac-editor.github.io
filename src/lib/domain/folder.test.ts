@@ -10,7 +10,10 @@ function folder(name: string, tree: Tree): FolderHandle {
 	const file = (key: string): FolderFile => ({
 		kind: 'file',
 		name: key,
-		getFile: async () => ({ text: async () => tree[key] as string }),
+		getFile: async () => ({
+			text: async () => tree[key] as string,
+			arrayBuffer: async () => new TextEncoder().encode(tree[key] as string).buffer as ArrayBuffer
+		}),
 		createWritable: async () => {
 			let next = '';
 			return {
@@ -54,10 +57,18 @@ const plans = (): Tree => ({
 		}
 	},
 	offerings: { 'y7.json': '{\n  "id": "y7"\n}\n' },
-	calendar: { '2027.json': '{\n  "year": 2027\n}\n' }
+	calendar: { '2027.json': '{\n  "year": 2027\n}\n' },
+	assets: { 'logo.svg': '<svg/>' }
 });
 
 describe('FolderStore', () => {
+	it('reads the logo by name, though assets/ is never listed', async () => {
+		const store = new FolderStore(folder('plans', plans()));
+		expect((await store.paths()).has('assets/logo.svg')).toBe(false);
+		expect(atob(await store.readBase64('assets/logo.svg'))).toBe('<svg/>');
+		await expect(store.readBase64('assets/logo.png')).rejects.toThrow(NotFoundError);
+	});
+
 	it('lists only the folders the app reads, skipping hidden ones', async () => {
 		const store = new FolderStore(folder('almanac', plans()));
 		expect([...(await store.paths()).keys()].sort()).toEqual([

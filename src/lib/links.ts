@@ -29,6 +29,8 @@ export const links = {
 		resolve('/new-lesson') + query({ u, o, t }),
 	/** One of a class's assessment specs: `o` is the offering's path, `a` the spec's file stem. */
 	assessment: (o: string, a: string) => resolve('/assessment') + query({ o, a }),
+	/** A spec's notification as students get it, to save as a PDF. */
+	notification: (o: string, a: string) => resolve('/notification') + query({ o, a }),
 	/** Editing a spec and its notification together; without `a`, a new one for the class. */
 	assessmentEdit: (o: string, a?: string | null) => resolve('/assessment-edit') + query({ o, a }),
 	unit: (u: string, o?: string | null, t?: string | null) => resolve('/unit') + query({ u, o, t }),
