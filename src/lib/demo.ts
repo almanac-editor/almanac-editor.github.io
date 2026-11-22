@@ -104,7 +104,11 @@ const productDesign: Unit = {
 		'lessons/03_sketching_ideas.json',
 		'lessons/04_cardboard_prototypes.json',
 		'lessons/05_test_and_evaluate.json'
-	]
+	],
+	shared_folder: {
+		path: 'Designing everyday products',
+		url: 'https://example.com/shared/Designing%20everyday%20products'
+	}
 };
 
 const productLessons: Record<string, Lesson> = {
@@ -173,7 +177,9 @@ const productLessons: Record<string, Lesson> = {
 					name: 'Six objects box',
 					notes: 'Bottle opener, peeler, two pens, a stapler and a phone stand.'
 				},
-				{ name: 'Good design slides', canvas: 'good_design_slides' }
+				{ name: 'Good design slides', canvas: 'good_design_slides' },
+				{ name: 'Object ranking sheet', shared: 'resources/Object ranking sheet.docx' },
+				{ name: 'Design rules poster', shared: 'resources/Design rules poster' }
 			],
 			references: [
 				{

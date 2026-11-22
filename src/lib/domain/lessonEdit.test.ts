@@ -115,6 +115,18 @@ describe('fromDraft', () => {
 		expect(saved.resources![1].canvas).toBe('cheat_sheet');
 	});
 
+	it('keeps a resource shared path and its key position', () => {
+		const original = lesson();
+		original.resources = [
+			{ name: 'Worksheet', shared: 'resources/Worksheet.docx', notes: 'Print one each.' }
+		];
+		const draft = toDraft(original);
+		draft.resources[0].notes = 'Print two each.';
+		const saved = fromDraft(original, draft);
+		expect(Object.keys(saved.resources![0])).toEqual(['name', 'shared', 'notes']);
+		expect(saved.resources![0].shared).toBe('resources/Worksheet.docx');
+	});
+
 	it('adds a differentiation key in schema order', () => {
 		const saved = save((d) => (d.differentiation.extension = 'Sort shoes too.'));
 		expect(Object.keys(saved.differentiation!)).toEqual(['support', 'extension', 'eald']);

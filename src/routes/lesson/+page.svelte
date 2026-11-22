@@ -332,6 +332,7 @@
 					<LessonView
 						lesson={past ?? current.lesson}
 						{registry}
+						sharedFolder={unit.shared_folder?.url}
 						content={past ? undefined : content}
 					>
 						{#snippet feedback()}

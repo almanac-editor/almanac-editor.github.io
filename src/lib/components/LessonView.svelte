@@ -9,6 +9,7 @@
 		citationParts,
 		kindClass,
 		linkHost,
+		sharedPlace,
 		startTimes,
 		timing
 	} from '#lib/domain/lessonView.ts';
@@ -19,7 +20,8 @@
 		registry,
 		content,
 		feedback,
-		materials
+		materials,
+		sharedFolder
 	}: {
 		lesson: Lesson;
 		registry: Map<string, RegistryEntry>;
@@ -29,6 +31,8 @@
 		feedback?: Snippet;
 		/** Links to what a class saw, or where the plan's files land, for the margin. */
 		materials?: Snippet;
+		/** The unit's `shared_folder.url`, which a resource's `shared` path is under. */
+		sharedFolder?: string;
 	} = $props();
 
 	const t = $derived(timing(lesson));
@@ -179,12 +183,25 @@
 				<ul class="res">
 					{#each lesson.resources as r, i (i)}
 						{@const host = r.url ? linkHost(r.url) : null}
+						{@const place = r.shared ? sharedPlace(r.shared, sharedFolder) : null}
+						{@const fileHref = place?.kind === 'link' ? place.url : null}
 						<li>
-							<Icon name={r.url ? 'link' : 'file'} size={16} />
+							<Icon name={r.url || fileHref ? 'link' : 'file'} size={16} />
 							<div>
 								{#if host}<a href={r.url} target="_blank" rel="noreferrer">{r.name}</a
+									>{:else if fileHref}<a href={fileHref} target="_blank" rel="noreferrer"
+										>{r.name}</a
 									>{:else}<strong>{r.name}</strong>{/if}
 								{#if r.url && !host}<span class="where">{r.url}</span>{/if}
+								{#if host && fileHref}
+									<a class="where" href={fileHref} target="_blank" rel="noreferrer"
+										>Shared file: {r.shared}</a
+									>
+								{:else if place?.kind === 'missing'}
+									<span class="where missing">Shared file not found yet: {r.shared}</span>
+								{:else if place?.kind === 'text'}
+									<span class="where">Shared folder: {r.shared}</span>
+								{/if}
 								{#if r.canvas || r.file}
 									<span class="where">
 										{#if r.canvas}Canvas: {r.canvas}{/if}
@@ -512,7 +529,8 @@
 		white-space: nowrap;
 	}
 
-	.text.missing {
+	.text.missing,
+	.where.missing {
 		color: var(--warn);
 	}
 

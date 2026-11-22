@@ -413,15 +413,18 @@
 		{#if draft.resources.length}
 			<section>
 				<h2>Resources</h2>
-				<p class="hint">Links, Canvas targets and files are set in the plan’s source.</p>
+				<p class="hint">
+					Links, Canvas targets, files and shared files are set in the plan’s source.
+				</p>
 				{#each draft.resources as r, i (i)}
 					<fieldset class="res">
 						<legend class="sr-only">Resource {i + 1}</legend>
 						<label class="field"><span>Name</span><input type="text" bind:value={r.name} /></label>
-						{#if r.canvas || r.file || r.url}
+						{#if r.canvas || r.file || r.shared || r.url}
 							<p class="where">
 								{#if r.canvas}Canvas: {r.canvas}{/if}
 								{#if r.file}File: {r.file}{/if}
+								{#if r.shared}Shared folder: {r.shared}{/if}
 								{#if r.url}Link{/if}
 							</p>
 						{/if}
