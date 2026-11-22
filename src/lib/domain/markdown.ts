@@ -46,6 +46,11 @@ export function parseInline(source: string): Inline[] {
 		if ((m = rest.match(/^`([^`]+)`/))) {
 			flush();
 			out.push({ kind: 'code', text: m[1] });
+		} else if ((m = rest.match(/^\\([!-/:-@[-`{-~])/))) {
+			// A backslash escape: the character itself, as CommonMark reads it.
+			text += m[1];
+			i += 2;
+			continue;
 		} else if ((m = rest.match(/^(\*\*|__)(?=\S)([\s\S]*?\S)\1/))) {
 			flush();
 			out.push({ kind: 'strong', children: parseInline(m[2]) });

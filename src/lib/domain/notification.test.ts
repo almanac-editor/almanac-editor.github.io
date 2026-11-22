@@ -101,6 +101,10 @@ describe('parseMarkdown', () => {
 		});
 	});
 
+	it('reads a backslash escape as the character itself', () => {
+		expect(plain(parseInline('I, \\<name\\>, sign \\*here\\*'))).toBe('I, <name>, sign *here*');
+	});
+
 	it('reads a table without a header, and escaped pipes in cells', () => {
 		const [table] = parseMarkdown('| | |\n|---|---|\n| a | b \\| c |\n');
 		expect(table).toMatchObject({ kind: 'table', head: null });

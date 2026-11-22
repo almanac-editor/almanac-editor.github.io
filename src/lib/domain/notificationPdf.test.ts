@@ -60,7 +60,8 @@ Plain text closes the bold paragraph.
 Never issued.
 `;
 
-const text = (line: Line) => ('inline' in line ? plain(line.inline) : `${line.code}|${line.text}`);
+const text = (line: Line) =>
+	'inline' in line ? plain(line.inline) : line.kind === 'coded' ? `${line.code}|${line.text}` : '';
 
 describe('notificationLayout', () => {
 	const layout = notificationLayout(SOURCE);
@@ -138,5 +139,108 @@ describe('logoUrl', () => {
 	it('names the image type from the extension', () => {
 		expect(logoUrl('assets/logo.JPG', 'AAAA')).toBe('data:image/jpeg;base64,AAAA');
 		expect(logoUrl('assets/logo.svg', 'AAAA')).toBe('data:image/svg+xml;base64,AAAA');
+	});
+});
+
+// Made up: a parts table and Marking criteria in the house form.
+const MARKED = `# 2031 Year 8 Kite Making
+
+## Assessment Task 2: Build a box kite
+
+## Task overview
+
+| Part | Where | Marks |
+|---|---|---|
+| 1. Frame | In class | 10 |
+| **Total** | | **10** |
+
+## Marking criteria
+
+Read every criterion.
+
+### Part 1: Frame (10 marks, in class)
+
+KM-8-01 designs a kite
+
+**Joints (4 marks)**
+
+| Marks | Criteria |
+|---|---|
+| 4-3 | Joins every spar firmly. |
+| 2-0 | Joins some spars. |
+
+**Sail (6 marks)**
+
+| Marks | Criteria |
+|---|---|
+| 6-4 | Fits the sail tightly. |
+| 3-0 | Fits the sail. |
+
+### Part 2: Flight (5 marks, at home)
+
+| Marks | Criteria |
+|---|---|
+| 5 | Flies for a minute. |
+
+## How to prepare
+
+Practise.
+`;
+
+describe('tables and the rubric', () => {
+	const layout = notificationLayout(MARKED);
+
+	it('keeps a table with a header as a table', () => {
+		const [line] = layout.rows[0].lines;
+		expect(line.kind).toBe('table');
+		if (line.kind !== 'table') return;
+		expect(line.head.map(plain)).toEqual(['Part', 'Where', 'Marks']);
+		expect(line.rows.map((r) => r.map(plain))).toEqual([
+			['1. Frame', 'In class', '10'],
+			['Total', '', '10']
+		]);
+	});
+
+	it('takes Marking criteria out of the label rows and reads its parts and criteria', () => {
+		expect(layout.rows.map((r) => r.label)).toEqual(['Task overview', 'How to prepare']);
+		const rubric = layout.rubric!;
+		expect(rubric.heading).toBe('Marking criteria');
+		expect(rubric.lines.map(text)).toEqual(['Read every criterion.']);
+		expect(rubric.parts.map((p) => plain(p.heading))).toEqual([
+			'Part 1: Frame (10 marks, in class)',
+			'Part 2: Flight (5 marks, at home)'
+		]);
+		expect(rubric.parts[0].lines.map(text)).toEqual(['KM-8-01|designs a kite']);
+		expect(
+			rubric.parts.map((p) =>
+				p.criteria.map((c) => [c.label, ...c.ranges.map((r) => `${r.marks}: ${plain(r.text)}`)])
+			)
+		).toEqual([
+			[
+				['Joints (4 marks)', '4-3: Joins every spar firmly.', '2-0: Joins some spars.'],
+				['Sail (6 marks)', '6-4: Fits the sail tightly.', '3-0: Fits the sail.']
+			],
+			[['Flight (5 marks)', '5: Flies for a minute.']]
+		]);
+	});
+
+	it('leaves Marking criteria as a label row when it holds no rubric', () => {
+		const plainCriteria = notificationLayout('# S\n\n## T\n\n## Marking criteria\n\nAsk me.\n');
+		expect(plainCriteria.rubric).toBeNull();
+		expect(plainCriteria.rows.map((r) => r.label)).toEqual(['Marking criteria']);
+	});
+});
+
+describe('outcome codes', () => {
+	it('keeps a headed table of outcome codes as a code column', () => {
+		const lines = sectionLines(
+			parseMarkdown('| Code | Outcome |\n|---|---|\n| EC-12-02 | explains data |\n')
+		);
+		expect(lines).toEqual([{ kind: 'coded', code: 'EC-12-02', text: 'explains data' }]);
+	});
+
+	it('sets a line that opens with an outcome code in the code column', () => {
+		const lines = sectionLines(parseMarkdown('EC-12-02 explains data\n\nPlain words\n'));
+		expect(lines.map((l) => l.kind)).toEqual(['coded', 'para']);
 	});
 });

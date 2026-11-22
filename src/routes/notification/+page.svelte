@@ -11,7 +11,7 @@
 	import PageHead from '#lib/components/PageHead.svelte';
 	import { assessmentPath } from '#lib/domain/assessments.ts';
 	import type { Inline } from '#lib/domain/markdown.ts';
-	import { notificationLayout } from '#lib/domain/notificationPdf.ts';
+	import { notificationLayout, type Line } from '#lib/domain/notificationPdf.ts';
 	import { stem } from '#lib/domain/paths.ts';
 	import { className } from '#lib/house.ts';
 	import { links } from '#lib/links.ts';
@@ -68,6 +68,55 @@
 				node.children
 			)}{/if}{/each}{/snippet}
 
+<!-- The logo and the year and subject line, repeated at the top of every page. -->
+{#snippet letterhead(logo: string | null, subject: string | null)}
+	<div class="letterhead">
+		<span class="logo"
+			>{#if logo}<img src={logo} alt="" />{/if}</span
+		>
+		<b>{subject ?? ''}</b>
+	</div>
+{/snippet}
+
+<!-- A label row's content, line by line. -->
+{#snippet lines(all: Line[])}
+	{#each all as line, l (l)}
+		{#if line.kind === 'heading'}
+			<p class="ln heading"><b>{@render inline(line.inline)}</b></p>
+		{:else if line.kind === 'para'}
+			<p class="ln para">{@render inline(line.inline)}</p>
+		{:else if line.kind === 'item'}
+			<p class="ln item" class:lead={line.bold} class:deep={line.level === 2}>
+				<span class="mark">{line.mark}</span>
+				<span
+					>{#if line.bold}<b>{@render inline(line.inline)}</b>{:else}{@render inline(
+							line.inline
+						)}{/if}</span
+				>
+			</p>
+		{:else if line.kind === 'quote'}
+			<p class="ln quote"><i>{@render inline(line.inline)}</i></p>
+		{:else if line.kind === 'table'}
+			<table class="ln cells">
+				<thead>
+					<tr>
+						{#each line.head as cell, i (i)}<th scope="col">{@render inline(cell)}</th>{/each}
+					</tr>
+				</thead>
+				<tbody>
+					{#each line.rows as row, r (r)}
+						<tr
+							>{#each row as cell, i (i)}<td>{@render inline(cell)}</td>{/each}</tr
+						>
+					{/each}
+				</tbody>
+			</table>
+		{:else}
+			<p class="ln coded"><b>{line.code}</b><span>{line.text}</span></p>
+		{/if}
+	{/each}
+{/snippet}
+
 {#if !o || !a}
 	<PageHead title="No assessment given" />
 	<div class="page">
@@ -122,19 +171,10 @@
 
 				<div class="preview">
 					<div class="sheet">
-						<table>
+						<table class="page-table">
 							<colgroup><col class="label-col" /><col /></colgroup>
 							<thead>
-								<tr>
-									<td colspan="2">
-										<div class="letterhead">
-											<span class="logo"
-												>{#if logo}<img src={logo} alt="" />{/if}</span
-											>
-											<b>{layout.subject ?? ''}</b>
-										</div>
-									</td>
-								</tr>
+								<tr><td colspan="2">{@render letterhead(logo, layout.subject)}</td></tr>
 							</thead>
 							<tfoot>
 								<tr><td colspan="2" class="foot"></td></tr>
@@ -150,32 +190,65 @@
 								{#each layout.rows as row, r (r)}
 									<tr class="row">
 										<th scope="row">{row.label}</th>
-										<td>
-											{#each row.lines as line, l (l)}
-												{#if line.kind === 'heading'}
-													<p class="ln heading"><b>{@render inline(line.inline)}</b></p>
-												{:else if line.kind === 'para'}
-													<p class="ln para">{@render inline(line.inline)}</p>
-												{:else if line.kind === 'item'}
-													<p class="ln item" class:lead={line.bold} class:deep={line.level === 2}>
-														<span class="mark">{line.mark}</span>
-														<span
-															>{#if line.bold}<b>{@render inline(line.inline)}</b
-																>{:else}{@render inline(line.inline)}{/if}</span
-														>
-													</p>
-												{:else if line.kind === 'quote'}
-													<p class="ln quote"><i>{@render inline(line.inline)}</i></p>
-												{:else}
-													<p class="ln coded"><b>{line.code}</b><span>{line.text}</span></p>
-												{/if}
-											{/each}
-										</td>
+										<td>{@render lines(row.lines)}</td>
 									</tr>
 								{/each}
 							</tbody>
 						</table>
 					</div>
+
+					{#if layout.rubric}
+						{@const rubric = layout.rubric}
+						<!-- Marking criteria on landscape pages, as the school's own notifications set it. -->
+						<div class="sheet landscape">
+							<table class="page-table">
+								<thead>
+									<tr><td>{@render letterhead(logo, layout.subject)}</td></tr>
+								</thead>
+								<tfoot>
+									<tr><td class="foot"></td></tr>
+								</tfoot>
+								<tbody>
+									<tr>
+										<td class="title">
+											<h2><b>{rubric.heading}</b></h2>
+											{@render lines(rubric.lines)}
+										</td>
+									</tr>
+									{#each rubric.parts as part, p (p)}
+										<tr>
+											<td class="part">
+												<p class="part-h"><b>{@render inline(part.heading)}</b></p>
+												{@render lines(part.lines)}
+												{#each part.criteria as criterion, c (c)}
+													<table class="grid">
+														<colgroup>
+															<col class="criterion-col" />
+															{#each criterion.ranges, i (i)}<col />{/each}
+														</colgroup>
+														<tbody>
+															<tr class="marks">
+																<td></td>
+																{#each criterion.ranges as range, i (i)}
+																	<th scope="col">{range.marks}</th>
+																{/each}
+															</tr>
+															<tr>
+																<th scope="row">{criterion.label}</th>
+																{#each criterion.ranges as range, i (i)}
+																	<td>{@render inline(range.text)}</td>
+																{/each}
+															</tr>
+														</tbody>
+													</table>
+												{/each}
+											</td>
+										</tr>
+									{/each}
+								</tbody>
+							</table>
+						</div>
+					{/if}
 				</div>
 			{/if}
 		</div>
@@ -224,7 +297,7 @@
 		-webkit-print-color-adjust: exact;
 	}
 
-	table {
+	.page-table {
 		width: 18cm;
 		table-layout: fixed;
 		border-collapse: separate;
@@ -232,8 +305,18 @@
 		border-spacing: 0 2pt;
 	}
 
+	.landscape {
+		width: 29.7cm;
+		min-height: 21cm;
+		margin-top: 24px;
+	}
+
+	.landscape .page-table {
+		width: 26.7cm;
+	}
+
 	/* The letterhead, repeated at the top of every printed page. */
-	thead td {
+	.page-table > thead td {
 		padding: 0.8cm 0 0.25cm;
 	}
 
@@ -274,8 +357,8 @@
 		font-weight: 400;
 	}
 
-	.row th,
-	.row td {
+	.row > th,
+	.row > td {
 		padding: 3pt 6pt;
 		border: 0.5pt solid #808080;
 		vertical-align: top;
@@ -286,7 +369,7 @@
 		width: 3.2cm;
 	}
 
-	.row th {
+	.row > th {
 		border-right: 0;
 		background: #d9d9d9;
 		font-weight: 700;
@@ -338,12 +421,76 @@
 		margin-bottom: 3pt;
 	}
 
+	/* A table in a label row: the Task overview's parts. */
+	.ln.cells {
+		width: 100%;
+		margin: 4pt 0;
+		border-collapse: collapse;
+		break-inside: avoid;
+	}
+
+	.cells th,
+	.cells td {
+		padding: 2pt 5pt;
+		border: 0.5pt solid #808080;
+		text-align: left;
+		vertical-align: top;
+	}
+
+	.cells th {
+		background: #f2f2f2;
+		font-weight: 700;
+	}
+
+	/* The rubric: per part its heading, then per criterion a grid with the
+	   mark ranges across a shaded row and each range's wording under it. */
+	.part {
+		padding: 0 0 6pt;
+	}
+
+	.part-h {
+		margin: 6pt 0 2pt;
+		break-after: avoid;
+	}
+
+	.grid {
+		width: 100%;
+		table-layout: fixed;
+		margin: 4pt 0 6pt;
+		border-collapse: collapse;
+		font-size: 10pt;
+		break-inside: avoid;
+	}
+
+	.criterion-col {
+		width: 4.2cm;
+	}
+
+	.grid th,
+	.grid td {
+		padding: 3pt 5pt;
+		border: 0.5pt solid #808080;
+		vertical-align: top;
+		text-align: left;
+	}
+
+	.grid .marks th,
+	.grid .marks td {
+		background: #f2f2f2;
+		text-align: center;
+	}
+
 	code {
 		font-family: Consolas, 'Courier New', monospace;
 	}
 
 	@page {
 		size: A4;
+		margin: 0;
+	}
+
+	@page landscape {
+		size: A4 landscape;
 		margin: 0;
 	}
 
@@ -383,7 +530,13 @@
 		.sheet {
 			width: auto;
 			min-height: 0;
+			margin: 0;
 			box-shadow: none;
+		}
+
+		.landscape {
+			page: landscape;
+			break-before: page;
 		}
 	}
 </style>
