@@ -433,7 +433,7 @@ Plain, firm and square.
 
 ### Page Header (signature)
 
-A full-bleed flat field in the house colour carrying crumbs, the optional giant numeral, the display title, a lede, actions and a meta row. On mount it starts from the previous page's house (`--from`, captured by an outer wrapper that wears the previous house) using `@starting-style` and transitions background and text over 650ms on the house ease, so moving between classes reads as the colour changing hands. Selection and focus outlines invert to house-on inside it.
+A full-bleed flat field in the house colour carrying crumbs, the optional giant numeral, the display title, a lede, actions and a meta row. The actions always take their own row under the title and lede, on every screen size, so a long lede is never squeezed into a narrow column and the buttons do not move between screens. On mount it starts from the previous page's house (`--from`, captured by an outer wrapper that wears the previous house) using `@starting-style` and transitions background and text over 650ms on the house ease, so moving between classes reads as the colour changing hands. Selection and focus outlines invert to house-on inside it.
 
 ### Lane Strip (signature)
 
