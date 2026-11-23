@@ -139,7 +139,11 @@
 		background: color-mix(in oklab, currentColor 18%, transparent);
 	}
 
+	/* The actions always take a row of their own under the title, so the
+	   title and lede keep the full width and the buttons sit in the same
+	   place on every screen size. */
 	.actions {
+		flex-basis: 100%;
 		display: flex;
 		gap: 8px;
 		flex-wrap: wrap;
